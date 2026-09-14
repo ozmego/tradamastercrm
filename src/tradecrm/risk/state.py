@@ -1,66 +1,53 @@
-"""Risk durumunun (kill-switch, TRADING_ENABLED, gunluk P&L) gecici
-in-memory implementasyonu.
+"""RiskManager/target_sizing'in kullandigi risk-durumu arayuzu.
 
-Faz 5'te bu sinifin disaridan gorulen arayuzu (RiskStateStore) aynen
-korunacak, ancak icerideki depolama db/repository.py'ye (RiskEvent
-tablosu + trades agregasyonu) baglanacak sekilde degistirilecek --
-boylece RiskManager ve target_sizing kodunda degisiklik gerekmeyecek.
+Faz 5 itibariyla tek kaynak veritabanidir (db.repository): kill-switch,
+TRADING_ENABLED ve ilk-canli-emir onayi RiskEvent satirlari olarak, gunluk
+gerceklesen P&L ise Trade tablosundan turetilir. Ayri bir in-memory/dosya
+state'i yoktur -- boylece RiskManager, dashboard ve runner hep ayni veriyi
+gorur.
 """
 
-from dataclasses import dataclass
 from datetime import date
 
+from sqlmodel import Session
 
-@dataclass
-class _DailyState:
-    realized_pnl_pct: float = 0.0
+from tradecrm.db.repository import RiskEventRepository, TradeRepository
 
 
 class RiskStateStore:
-    def __init__(self) -> None:
-        self._trading_enabled = False
-        self._kill_switch_tripped = False
-        self._kill_switch_reason: str = ""
-        self._first_order_confirmed = False
-        self._daily: dict[date, _DailyState] = {}
+    def __init__(self, session: Session) -> None:
+        self.session = session
+        self._risk_events = RiskEventRepository(session)
+        self._trades = TradeRepository(session)
 
-    # --- TRADING_ENABLED -------------------------------------------------
+    # --- TRADING_ENABLED -----------------------------------------------------
     def is_trading_enabled(self) -> bool:
-        return self._trading_enabled
+        return self._risk_events.is_trading_enabled()
 
     def set_trading_enabled(self, value: bool) -> None:
-        self._trading_enabled = value
+        self._risk_events.record_event("TRADING_ENABLED" if value else "TRADING_DISABLED")
 
-    # --- Kill switch -------------------------------------------------------
+    # --- Kill switch -----------------------------------------------------------
     def is_kill_switch_tripped(self) -> bool:
-        return self._kill_switch_tripped
+        return self._risk_events.is_kill_switch_tripped()
 
     def trip_kill_switch(self, reason: str) -> None:
-        self._kill_switch_tripped = True
-        self._kill_switch_reason = reason
+        self._risk_events.record_event("KILL_SWITCH_TRIP", reason=reason)
 
     def reset_kill_switch(self) -> None:
-        self._kill_switch_tripped = False
-        self._kill_switch_reason = ""
+        self._risk_events.record_event("KILL_SWITCH_RESET")
 
     @property
     def kill_switch_reason(self) -> str:
-        return self._kill_switch_reason
+        return self._risk_events.get_kill_switch_reason()
 
-    # --- Ilk canli emir onayi ----------------------------------------------
+    # --- Ilk canli emir onayi ----------------------------------------------------
     def is_first_order_confirmed(self) -> bool:
-        return self._first_order_confirmed
+        return self._risk_events.is_first_order_confirmed()
 
     def confirm_first_order(self) -> None:
-        self._first_order_confirmed = True
+        self._risk_events.record_event("FIRST_ORDER_CONFIRMED")
 
-    # --- Gunluk gerceklesen P&L ---------------------------------------------
+    # --- Gunluk gerceklesen P&L (Trade tablosundan turetilir) ---------------------
     def get_realized_pnl_pct(self, for_date: date) -> float:
-        return self._daily.get(for_date, _DailyState()).realized_pnl_pct
-
-    def record_realized_pnl_pct(self, for_date: date, pnl_pct_delta: float) -> None:
-        state = self._daily.setdefault(for_date, _DailyState())
-        state.realized_pnl_pct += pnl_pct_delta
-
-    def set_realized_pnl_pct(self, for_date: date, pnl_pct: float) -> None:
-        self._daily[for_date] = _DailyState(realized_pnl_pct=pnl_pct)
+        return self._trades.get_realized_pnl_pct_for_date(for_date)

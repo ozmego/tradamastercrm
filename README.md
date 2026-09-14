@@ -5,13 +5,14 @@ Binance spot piyasasinda calisan, Python/ccxt tabanli algoritmik trading botu.
 ## Kurulum
 
 ```
+docker compose up -d
 python -m venv .venv
 .venv\Scripts\activate
 pip install -e ".[dev]"
 copy .env.example .env
 ```
 
-`.env` dosyasini kendi API anahtarlarinizla doldurun. Binance API anahtari **sadece trading** yetkili olmali, **withdrawal kapali** birakilmalidir.
+`docker compose up -d`, `tradecrm` ve `tradecrm_test` veritabanlarina sahip bir PostgreSQL 16 container'i baslatir (host port 5434 -- 5432 diger projelerle cakisabildigi icin). `.env` dosyasini kendi API anahtarlarinizla doldurun. Binance API anahtari **sadece trading** yetkili olmali, **withdrawal kapali** birakilmalidir.
 
 ## Kullanim
 

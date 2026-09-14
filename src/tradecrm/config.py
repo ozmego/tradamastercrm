@@ -41,8 +41,10 @@ class Settings(BaseSettings):
     dashboard_host: str = "127.0.0.1"
     dashboard_port: int = 8000
 
+    # Veritabani
+    database_url: str = "postgresql+psycopg://tradecrm:tradecrm@localhost:5434/tradecrm"
+
     # Dosya yollari
-    db_path: str = "data/tradecrm.db"
     audit_log_path: str = "logs/audit.jsonl"
 
 

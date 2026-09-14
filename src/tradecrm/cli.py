@@ -58,5 +58,72 @@ def backtest_run(
     typer.echo(summarize(result))
 
 
+def _open_risk_state():
+    from datetime import timezone as _tz
+
+    from sqlmodel import Session
+
+    from tradecrm.config import get_settings
+    from tradecrm.db.engine import create_db_and_tables, get_engine
+    from tradecrm.risk.state import RiskStateStore
+
+    settings = get_settings()
+    create_db_and_tables(settings.database_url)
+    session = Session(get_engine(settings.database_url))
+    return session, RiskStateStore(session), settings
+
+
+@risk_app.command("status")
+def risk_status() -> None:
+    """Guncel risk durumunu gosterir: TRADING_ENABLED, kill-switch, bugunku gerceklesen P&L."""
+    from datetime import datetime, timezone
+
+    session, state, _settings = _open_risk_state()
+    try:
+        today = datetime.now(timezone.utc).date()
+        typer.echo(f"TRADING_ENABLED: {state.is_trading_enabled()}")
+        kill_tripped = state.is_kill_switch_tripped()
+        typer.echo(f"Kill-switch tetiklendi: {kill_tripped}")
+        if kill_tripped:
+            typer.echo(f"  Neden: {state.kill_switch_reason}")
+        typer.echo(f"Ilk canli emir onaylandi: {state.is_first_order_confirmed()}")
+        typer.echo(f"Bugunku ({today}) gerceklesen P&L: {state.get_realized_pnl_pct(today):.4%}")
+    finally:
+        session.close()
+
+
+@risk_app.command("reset-kill-switch")
+def risk_reset_kill_switch() -> None:
+    """Kill-switch'i manuel olarak resetler (gunluk zarar limiti asildiktan sonra)."""
+    session, state, _settings = _open_risk_state()
+    try:
+        state.reset_kill_switch()
+        typer.echo("Kill-switch resetlendi.")
+    finally:
+        session.close()
+
+
+@risk_app.command("enable-trading")
+def risk_enable_trading() -> None:
+    """TRADING_ENABLED bayragini acar (varsayilan kapalidir)."""
+    session, state, _settings = _open_risk_state()
+    try:
+        state.set_trading_enabled(True)
+        typer.echo("TRADING_ENABLED = true")
+    finally:
+        session.close()
+
+
+@risk_app.command("disable-trading")
+def risk_disable_trading() -> None:
+    """TRADING_ENABLED bayragini kapatir."""
+    session, state, _settings = _open_risk_state()
+    try:
+        state.set_trading_enabled(False)
+        typer.echo("TRADING_ENABLED = false")
+    finally:
+        session.close()
+
+
 if __name__ == "__main__":
     app()

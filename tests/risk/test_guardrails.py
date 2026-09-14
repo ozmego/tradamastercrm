@@ -6,8 +6,8 @@ from tradecrm.strategy.base import Signal
 
 
 @pytest.fixture()
-def state() -> RiskStateStore:
-    return RiskStateStore()
+def state(db_session) -> RiskStateStore:
+    return RiskStateStore(db_session)
 
 
 @pytest.fixture()
