@@ -125,5 +125,21 @@ def risk_disable_trading() -> None:
         session.close()
 
 
+@telegram_app.command("test")
+def telegram_test() -> None:
+    """Telegram kurulumunu gercek bir mesaj gondererek dogrular."""
+    from tradecrm.config import get_settings
+    from tradecrm.notify.telegram import TelegramNotifier
+
+    settings = get_settings()
+    notifier = TelegramNotifier(settings.telegram_bot_token, settings.telegram_chat_id)
+    ok = notifier.send_message("TradeCRM: Telegram baglantisi calisiyor.")
+    if ok:
+        typer.echo("Mesaj basariyla gonderildi.")
+    else:
+        typer.echo("Mesaj gonderilemedi. TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID degerlerini kontrol edin.")
+        raise typer.Exit(code=1)
+
+
 if __name__ == "__main__":
     app()
