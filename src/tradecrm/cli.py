@@ -125,6 +125,83 @@ def risk_disable_trading() -> None:
         session.close()
 
 
+@live_app.command("run")
+def live_run(
+    mode: str = typer.Option("paper", help="Su an sadece 'paper' destekleniyor (Faz 10'da 'binance' eklenecek)."),
+    symbol: str = typer.Option(None, help="Bos ise .env'deki SYMBOL kullanilir."),
+    timeframe: str = typer.Option(None, help="Bos ise .env'deki TIMEFRAME kullanilir."),
+    strategy: str = typer.Option("ema_rsi_crossover", help="Kullanilacak strateji adi (registry)."),
+    initial_capital: float = typer.Option(10_000.0, help="Paper modda baslangic sermayesi."),
+    run_immediately: bool = typer.Option(True, help="Baslar baslamaz bir tick calistir."),
+) -> None:
+    """Paper modda canli calisir: data -> strategy -> risk -> broker -> db -> audit -> notify.
+    Zamanlanmis dongu, Ctrl+C ile durdurulana kadar calisir."""
+    if mode != "paper":
+        typer.echo("Su an sadece --mode paper destekleniyor.")
+        raise typer.Exit(code=1)
+
+    from sqlmodel import Session
+
+    from tradecrm.audit.logger import AuditLogger
+    from tradecrm.broker.paper_adapter import PaperBrokerAdapter
+    from tradecrm.config import get_settings
+    from tradecrm.data.provider import CCXTDataProvider
+    from tradecrm.db.engine import create_db_and_tables, get_engine
+    from tradecrm.notify.telegram import TelegramNotifier
+    from tradecrm.risk.guardrails import RiskManager
+    from tradecrm.risk.state import RiskStateStore
+    from tradecrm.runner.live_runner import LiveRunner
+    from tradecrm.runner.scheduler import run_scheduler
+    from tradecrm.strategy.registry import get_strategy
+
+    settings = get_settings()
+    resolved_symbol = symbol or settings.symbol
+    resolved_timeframe = timeframe or settings.timeframe
+
+    create_db_and_tables(settings.database_url)
+    session = Session(get_engine(settings.database_url))
+
+    provider = CCXTDataProvider()
+    strategy_instance = get_strategy(strategy)
+    state = RiskStateStore(session)
+    risk_manager = RiskManager(
+        state,
+        total_capital_allocation_pct=settings.total_capital_allocation_pct,
+        max_daily_loss_pct=settings.max_daily_loss_pct,
+    )
+    broker = PaperBrokerAdapter(session, provider, initial_capital=initial_capital)
+    notifier = TelegramNotifier(settings.telegram_bot_token, settings.telegram_chat_id)
+    audit_logger = AuditLogger(settings.audit_log_path)
+
+    runner = LiveRunner(
+        data_provider=provider,
+        strategy=strategy_instance,
+        risk_manager=risk_manager,
+        state=state,
+        broker=broker,
+        notifier=notifier,
+        audit_logger=audit_logger,
+        symbol=resolved_symbol,
+        timeframe=resolved_timeframe,
+        daily_growth_target_pct=settings.daily_growth_target_pct,
+        min_position_fraction=settings.min_position_fraction,
+        max_position_fraction=settings.max_position_fraction,
+        daily_target_stop_on_hit=settings.daily_target_stop_on_hit,
+        max_daily_loss_pct=settings.max_daily_loss_pct,
+    )
+
+    typer.echo(
+        f"Paper mod baslatiliyor: {resolved_symbol} {resolved_timeframe} strateji={strategy} "
+        f"TRADING_ENABLED={state.is_trading_enabled()}"
+    )
+    try:
+        run_scheduler(runner, resolved_timeframe, run_immediately=run_immediately)
+    except KeyboardInterrupt:
+        typer.echo("Durduruldu.")
+    finally:
+        session.close()
+
+
 @telegram_app.command("test")
 def telegram_test() -> None:
     """Telegram kurulumunu gercek bir mesaj gondererek dogrular."""
