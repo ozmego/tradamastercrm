@@ -23,6 +23,8 @@ class Strategy(ABC):
 
     name: str = "base"
     required_lookback: int = 0
+    # "long": kod 1 = al, -1 = sat. "short": kod 1 = short ac, -1 = kapat (yalnizca backtest/arastirma).
+    direction: str = "long"
     # Walk-forward optimizasyonu icin kucuk bir parametre izgarasi
     # (bilerek kucuk: genis izgara = overfitting).
     param_grid: ClassVar[dict[str, list]] = {}

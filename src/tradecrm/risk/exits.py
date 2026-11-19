@@ -98,3 +98,51 @@ def update_on_close(levels: PositionLevels, bar_high: float, atr_value: float, c
 
 def time_stop_due(bars_held: int, cfg: ExitConfig) -> bool:
     return cfg.max_bars_held is not None and bars_held >= cfg.max_bars_held
+
+
+# ---------------------------------------------------------------- KISA (short)
+# Ayna kurallar: stop girisin USTUNDE, TP altinda; basabas/trailing en DUSUK
+# fiyata gore; stop hicbir zaman yukari cekilmez. PositionLevels.highest alani
+# kisa pozisyonda "gorulen en dusuk fiyat"i tutar.
+
+
+def short_initial_stop_price(entry_price: float, atr_value: float, cfg: ExitConfig) -> float:
+    return entry_price + cfg.stop_atr_mult * atr_value
+
+
+def short_initial_levels(entry_price: float, atr_value: float, cfg: ExitConfig) -> PositionLevels:
+    if not atr_value or math.isnan(atr_value) or atr_value <= 0:
+        raise ValueError(f"Gecersiz ATR: {atr_value}")
+    stop = short_initial_stop_price(entry_price, atr_value, cfg)
+    tp = entry_price - cfg.take_profit_atr_mult * atr_value if cfg.take_profit_atr_mult else None
+    return PositionLevels(entry_price=entry_price, initial_stop=stop, stop=stop, take_profit=tp, highest=entry_price)
+
+
+def _short_stop_reason(levels: PositionLevels) -> str:
+    if levels.stop >= levels.initial_stop:
+        return "stop_loss"
+    if levels.stop >= levels.entry_price - 1e-12:
+        return "breakeven_stop"
+    return "trailing_stop"
+
+
+def short_check_bar_exit(levels: PositionLevels, bar_open: float, bar_high: float,
+                         bar_low: float) -> ExitDecision | None:
+    """Kisa pozisyon: fiyat stop'a YUKARI degerse cikis (bosluklu acilista acilistan, yani daha kotu)."""
+    if bar_high >= levels.stop:
+        return ExitDecision(_short_stop_reason(levels), max(bar_open, levels.stop))
+    if levels.take_profit is not None and bar_low <= levels.take_profit:
+        return ExitDecision("take_profit", min(bar_open, levels.take_profit))
+    return None
+
+
+def short_update_on_close(levels: PositionLevels, bar_low: float, atr_value: float, cfg: ExitConfig) -> PositionLevels:
+    lowest = min(levels.highest, bar_low)
+    stop = levels.stop
+    r = levels.initial_stop - levels.entry_price
+    activated = cfg.breakeven_at_r is not None and r > 0 and lowest <= levels.entry_price - cfg.breakeven_at_r * r
+    if activated:
+        stop = min(stop, levels.entry_price)
+        if cfg.trail_atr_mult is not None and not math.isnan(atr_value) and atr_value > 0:
+            stop = min(stop, lowest + cfg.trail_atr_mult * atr_value)
+    return replace(levels, highest=lowest, stop=stop)

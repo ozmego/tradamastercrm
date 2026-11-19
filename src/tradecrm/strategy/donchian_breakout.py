@@ -35,3 +35,21 @@ class DonchianBreakoutStrategy(VectorizedStrategy):
         codes[(close > upper).to_numpy()] = 1
         codes[(close < lower).to_numpy()] = -1
         return pd.Series(codes, index=df.index, name="signal")
+
+
+class DonchianBreakdownStrategy(DonchianBreakoutStrategy):
+    """Kisa yonlu ayna (arastirma): kapanis onceki `entry_period` barin en DUSUGUNUN
+    altina inerse SHORT ac (kod 1); onceki `exit_period` barin en YUKSEGINI asarsa
+    kapat (kod -1). Asil risk kontrolu cikis katmaninda (ATR stop yukarida)."""
+
+    name = "donchian_breakdown"
+    direction = "short"
+
+    def generate_signals(self, df: pd.DataFrame) -> pd.Series:
+        lower = df["Low"].rolling(self.entry_period).min().shift(1)
+        upper = df["High"].rolling(self.exit_period).max().shift(1)
+        close = df["Close"]
+        codes = np.zeros(len(df), dtype=np.int8)
+        codes[(close < lower).to_numpy()] = 1
+        codes[(close > upper).to_numpy()] = -1
+        return pd.Series(codes, index=df.index, name="signal")

@@ -16,12 +16,13 @@ def test_risk_profiles_cap_total_exposure_at_35pct(name):
 
 def test_active_profile_cap_and_single_trade_clamp():
     sizing = get_profile("donchian_fng").sizing
-    # stop cok yakin (dusuk volatilite): %1 risk -> %100 pozisyon isterdi; %35 ile sinirlanir
+    assert sizing.risk_per_trade_pct == pytest.approx(0.0075)
+    # stop cok yakin (dusuk volatilite): %0,75 risk -> %75 pozisyon isterdi; %35 ile sinirlanir
     frac, _ = compute_total_fraction(sizing, entry_price=100.0, stop_price=99.0)
     assert frac == pytest.approx(0.35)
-    # normal: 3 ATR = %6 uzak stop -> %16,7 pozisyon (tavanin altinda)
+    # normal: 3 ATR = %6 uzak stop -> %12,5 pozisyon (tavanin altinda)
     frac, _ = compute_total_fraction(sizing, entry_price=100.0, stop_price=94.0)
-    assert frac == pytest.approx(0.01 * 100 / 6)
+    assert frac == pytest.approx(0.0075 * 100 / 6)
 
 
 def test_exposure_cap_helper():

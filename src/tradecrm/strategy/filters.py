@@ -62,6 +62,24 @@ class TrendFilter(EntryFilter):
         return above
 
 
+class DowntrendFilter(EntryFilter):
+    """Kisa yon icin TrendFilter'in aynasi: fiyat uzun EMA'nin ALTINDA ve EMA asagi egimli."""
+
+    name = "downtrend"
+
+    def __init__(self, ema_length: int = 200, slope_bars: int | None = 24) -> None:
+        self.ema_length = ema_length
+        self.slope_bars = slope_bars
+        self.required_lookback = ema_length + (slope_bars or 0)
+
+    def mask(self, df):
+        e = ind.ema(df["Close"], self.ema_length)
+        below = df["Close"] < e
+        if self.slope_bars:
+            below &= e < e.shift(self.slope_bars)
+        return below
+
+
 class AdxFilter(EntryFilter):
     """Trend gucu: ADX esigin ustunde (yatay piyasada whipsaw'i eler)."""
 
@@ -269,7 +287,7 @@ class BtcTrendFilter(_SourceFilter):
 FILTERS: dict[str, type[EntryFilter]] = {
     cls.name: cls
     for cls in (
-        TrendFilter, AdxFilter, HigherTimeframeTrendFilter, VolumeFilter, VolatilityCapFilter,
+        TrendFilter, DowntrendFilter, AdxFilter, HigherTimeframeTrendFilter, VolumeFilter, VolatilityCapFilter,
         FundingFilter, FearGreedFilter, MacroBlackoutFilter, RegimeFilter, ConfirmationFilter, BtcTrendFilter,
     )
 }
@@ -290,6 +308,7 @@ class FilteredStrategy(VectorizedStrategy):
         self.name = f"{inner.name}+{'+'.join(f.name for f in filters)}" if filters else inner.name
         self.required_lookback = max([inner.required_lookback, *(f.required_lookback for f in filters)])
         self.param_grid = inner.param_grid
+        self.direction = getattr(inner, "direction", "long")
 
     def params(self) -> dict:
         return self.inner.params()

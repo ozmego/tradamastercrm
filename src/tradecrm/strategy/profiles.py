@@ -39,11 +39,19 @@ class Profile:
     def required_sources(self) -> set[str]:
         """Bu profilin filtrelerinin ihtiyac duydugu ek veri kaynaklari."""
         out = set()
+        if self.direction == "short":
+            out.add("funding")  # vadeli islem fonlama maliyeti/geliri (short_simulator)
         for name, _params in self.filters:
             src = FILTERS[name].source
             if src:
                 out.add(src)
         return out
+
+    @property
+    def direction(self) -> str:
+        from tradecrm.strategy.registry import STRATEGIES
+
+        return getattr(STRATEGIES[self.strategy_name], "direction", "long")
 
     def with_params(self, **params) -> "Profile":
         return replace(self, strategy_params={**self.strategy_params, **params})
@@ -123,7 +131,8 @@ register_profile(
 # kar trailing ile korunur.
 _TREND_EXITS = ExitConfig(stop_atr_mult=3.0, take_profit_atr_mult=None, breakeven_at_r=1.5, trail_atr_mult=4.0)
 # Toplam acik pozisyon tavani sermayenin %35'i (2026-11-18 kullanici karari; once %75).
-_RISK = SizingConfig(mode="risk", risk_per_trade_pct=0.01, max_total_fraction=0.35)
+# Islem basina risk %0,75 (2026-11-19 kullanici karari; once %1).
+_RISK = SizingConfig(mode="risk", risk_per_trade_pct=0.0075, max_total_fraction=0.35)
 # Gunluk kar hedefi +%5: ulasilinca o gun yeni alim yok (2026-11-18 kullanici karari). Pozisyon buyutulmez.
 _BREAKERS = BreakerConfig(daily_profit_target_pct=0.05)
 
@@ -235,6 +244,29 @@ register_profile(
         description="Oneri 8: mean_reversion + sadece yatay/notr rejimde (ADX<25, asiri volatilite yok).",
     )
 )
+
+
+# --- Kisa yon (ARASTIRMA; canliya baglanmadi) --------------------------------------
+# donchian'in aynasi: destek kirilinca short, direnc kirilinca kapat; dusus trendi
+# filtresi (fiyat < EMA200 ve EMA200 dusuyor). Cikis/boyut/devre kesiciler long ile ayni.
+# Onceden belirlenmis iki aday (coklu deneme riskini sinirlamak icin daha fazlasi denenmez).
+register_profile(
+    Profile(
+        name="donchian_short",
+        strategy_name="donchian_breakdown",
+        filters=(("downtrend", {"ema_length": 200}),),
+        exits=_TREND_EXITS,
+        sizing=_RISK,
+        breakers=_BREAKERS,
+        description="Kisa yon: 40 bar dibi kirilinca short, 20 bar zirvesi asilinca kapat; EMA200 dusus trendi.",
+    )
+)
+_donchian_short = PROFILES["donchian_short"]
+register_profile(replace(
+    _donchian_short, name="donchian_short_fng",
+    filters=_donchian_short.filters + (("fng", {"max_value": 100, "min_value": 20}),),
+    description="donchian_short + Fear&Greed < 20 (asiri korku, dip riski) iken short acma.",
+))
 
 
 # --- Oneri 9: portfoy (alt hesaplar) ------------------------------------------------

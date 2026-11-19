@@ -114,6 +114,8 @@ class FakeExchange:
             "fees": [{"cost": fee, "currency": "USDT"}], "timestamp": 1_763_000_100_000, "clientOrderId": coid})
 
     def fetch_order(self, id_, symbol, params):
+        if self.spec is KUCOIN and id_ is None:  # gercek ccxt davranisi (canli testte bulundu)
+            raise ccxt.ArgumentsRequired("kucoin fetchOrder() requires an id argument")
         coid = params[self.spec.query_param]
         o = self.orders.get(coid)
         if o is None:
@@ -330,3 +332,22 @@ def test_preflight_unreachable():
 
     checks = run_preflight(Down(KUCOIN), ["BTC/USDT"], 100.0, testnet=False, env_orders_open=False, spec=KUCOIN)
     assert checks[-1].status == "FAIL"
+
+
+@pytest.mark.parametrize("spec", SPECS)
+def test_entry_cost_uses_exchange_reported_cost_not_rounded_average(db_session, spec):
+    """Borsanin 'average' alani yuvarlanmis olabilir; maliyet gercek odenen tutara (cost) esit olmali."""
+    ex, adapter, om = _setup(db_session, spec, fee_currency="quote")
+    real_create = ex.create_market_buy_order_with_cost
+
+    def rounded_average(symbol, cost, params):
+        out = real_create(symbol, cost, params)
+        ex.orders[params[spec.client_id_param]]["average"] = 100.06  # yuvarlanmis/sapmis ortalama
+        if spec is BINANCE:
+            out["average"] = 100.06
+        return out
+
+    ex.create_market_buy_order_with_cost = rounded_average
+    om.execute("BTC/USDT", Signal.BUY, BAR, "d", notional=100.0)
+    t = TradeRepository(db_session).get_open_trades(broker=spec.id)[0]
+    assert t.entry_price * t.qty + t.entry_fees == pytest.approx(100.0 + 0.1)  # odenen USDT + komisyon

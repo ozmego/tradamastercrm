@@ -88,6 +88,10 @@ def simulate(
 ) -> SimResult:
     """trade_start: bu indeksten ONCEKI barlarda yeni giris yapilmaz
     (walk-forward'da gostergelerin isinmasi icin onceki veriler verilir)."""
+    if getattr(strategy, "direction", "long") == "short":
+        from tradecrm.backtest.short_simulator import simulate_short
+
+        return simulate_short(df, strategy, cfg, trade_start=trade_start, signals=signals, close_at_end=close_at_end)
     n = len(df)
     if signals is None:
         signals = strategy.generate_signals(df)

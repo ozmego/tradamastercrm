@@ -62,6 +62,9 @@ class ExchangeSpec:
     balance_params: dict = field(default_factory=dict)  # islem hesabinin bakiyesi
     needs_passphrase: bool = False
     has_sandbox: bool = False
+    # ccxt bazi borsalarda (KuCoin) fetch_order'da id'yi zorunlu tutar ama kimlikle sorguda kullanmaz:
+    # kimlik id yerine de gecilir.
+    query_needs_id: bool = False
 
 
 BINANCE = ExchangeSpec(
@@ -74,6 +77,7 @@ KUCOIN = ExchangeSpec(
     duplicate_markers=("126044",),
     balance_params={"type": "trade"},  # Trading hesabi (Funding = "main" ayri)
     needs_passphrase=True,
+    query_needs_id=True,  # canli testte bulundu: kucoin fetchOrder() requires an id argument
 )
 SPECS: dict[str, ExchangeSpec] = {s.id: s for s in (BINANCE, KUCOIN)}
 
@@ -219,7 +223,8 @@ class CcxtSpotAdapter(BrokerAdapter):
     def _query(self, symbol: str, coid: str) -> dict | None:
         """Borsadaki emir (kimlikle) ya da borsa emri hic gormediyse None."""
         try:
-            return self.exchange.fetch_order(None, symbol, {self.spec.query_param: coid})
+            order_id = coid if self.spec.query_needs_id else None
+            return self.exchange.fetch_order(order_id, symbol, {self.spec.query_param: coid})
         except Exception as exc:
             if isinstance(exc, ccxt.OrderNotFound) or _has_marker(exc, self.spec.not_found_markers):
                 return None
@@ -301,12 +306,16 @@ class CcxtSpotAdapter(BrokerAdapter):
 
     def _apply_buy(self, order: dict, symbol: str, strategy_name: str, reason: str | None,
                    coid: str) -> OrderResult:
-        filled, _cost, avg = self._filled(order)
+        filled, cost, avg = self._filled(order)
         if filled <= 0:
             status = order.get("status")
             if status in TERMINAL_EMPTY:
                 return OrderResult(False, f"order_{status}", client_order_id=coid, exchange_order_id=order.get("id"))
             raise BrokerTimeoutError(f"emir dolmadi (durum {status}); uzlastirmada tekrar sorulacak")
+        # Giris fiyati = borsanin bildirdigi GERCEK odenen tutar / dolan miktar (ortalama fiyat
+        # yuvarlanmis olabilir; canli KuCoin testinde maliyet ~0,005 USDT sapiyordu).
+        if cost > 0:
+            avg = cost / filled
         base = self._markets()[symbol]["base"]
         fee_quote, fee_base = self._fee_in_quote(order, base, avg)
         qty = filled - fee_base
