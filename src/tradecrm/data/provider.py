@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import ccxt
 import pandas as pd
@@ -62,21 +62,50 @@ class CCXTDataProvider:
 
         return _to_dataframe(all_candles, until_ms)
 
-    def fetch_latest_ohlcv(self, symbol: str, timeframe: str = "1h", limit: int = 200) -> pd.DataFrame:
-        """Son N mumu ceker (canli kullanim icin)."""
+    def fetch_latest_ohlcv(
+        self,
+        symbol: str,
+        timeframe: str = "1h",
+        limit: int = 1000,
+        closed_only: bool = True,
+        now: datetime | None = None,
+    ) -> pd.DataFrame:
+        """Son N mumu ceker (canli kullanim icin).
+
+        closed_only=True (varsayilan): borsanin dondurdugu son mum henuz
+        kapanmamissa atilir. Strateji df.iloc[-1]'e bakar; olusmakta olan
+        mum sinyalin tick'ten tick'e degismesine (repaint) ve backtest'le
+        (sadece kapanmis mumlar) sapmaya yol acar."""
         batch = self.exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
-        return _to_dataframe(batch, None)
+        df = _to_dataframe(batch, None)
+        if closed_only and not df.empty:
+            df = drop_unclosed_candle(df, timeframe, now=now)
+        return df
 
     def fetch_latest_price(self, symbol: str) -> float:
         ticker = self.exchange.fetch_ticker(symbol)
         return float(ticker["last"])
 
 
+def timeframe_to_timedelta(timeframe: str) -> pd.Timedelta:
+    return pd.Timedelta(seconds=ccxt.Exchange.parse_timeframe(timeframe))
+
+
+def drop_unclosed_candle(df: pd.DataFrame, timeframe: str, now: datetime | None = None) -> pd.DataFrame:
+    """Acilis zamani + timeframe > now olan son mumu atar."""
+    now_ts = pd.Timestamp(now or datetime.now(UTC))
+    if now_ts.tzinfo is None:
+        now_ts = now_ts.tz_localize("UTC")
+    if df.index[-1] + timeframe_to_timedelta(timeframe) > now_ts:
+        return df.iloc[:-1]
+    return df
+
+
 def _to_ms(dt: datetime | None) -> int | None:
     if dt is None:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
     return int(dt.timestamp() * 1000)
 
 

@@ -1,6 +1,6 @@
 import pytest
 
-from tradecrm.strategy.base import Strategy, Signal
+from tradecrm.strategy.base import Signal, Strategy
 from tradecrm.strategy.registry import STRATEGIES, get_strategy, register_strategy
 from tradecrm.strategy.sma_rsi_crossover import EmaRsiCrossoverStrategy
 

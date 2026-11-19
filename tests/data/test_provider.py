@@ -1,3 +1,5 @@
+from datetime import UTC
+
 from tradecrm.data.provider import CCXTDataProvider
 
 
@@ -64,3 +66,28 @@ def test_fetch_latest_price():
     provider = CCXTDataProvider(exchange=fake)
 
     assert provider.fetch_latest_price("BTC/USDT") == 12345.6
+
+
+class _LatestExchange(_FakeExchange):
+    def __init__(self, candles):
+        super().__init__(pages=[])
+        self._candles = candles
+
+    def fetch_ohlcv(self, symbol, timeframe="1h", since=None, limit=1000):
+        return self._candles
+
+
+def test_fetch_latest_ohlcv_drops_unclosed_candle():
+    from datetime import datetime
+
+    hour = 3_600_000
+    candles = [_candle(i * hour, 100 + i) for i in range(3)]  # 00:00, 01:00, 02:00
+    provider = CCXTDataProvider(exchange=_LatestExchange(candles))
+
+    now = datetime(1970, 1, 1, 2, 30, tzinfo=UTC)  # 02:00 mumu henuz acik
+    df = provider.fetch_latest_ohlcv("BTC/USDT", timeframe="1h", now=now)
+    assert len(df) == 2
+
+    now_closed = datetime(1970, 1, 1, 3, 0, 1, tzinfo=UTC)
+    df_closed = provider.fetch_latest_ohlcv("BTC/USDT", timeframe="1h", now=now_closed)
+    assert len(df_closed) == 3

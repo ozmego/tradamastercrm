@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
 
@@ -12,7 +12,7 @@ class TestTradeRepositoryOpenClose:
             symbol="BTC/USDT",
             strategy_name="ema_rsi_crossover",
             broker="paper",
-            entry_time=datetime(2026, 1, 1, 10, 0, tzinfo=timezone.utc),
+            entry_time=datetime(2026, 1, 1, 10, 0, tzinfo=UTC),
             entry_price=100.0,
             qty=1.0,
             account_balance_at_entry=1000.0,
@@ -27,14 +27,14 @@ class TestTradeRepositoryOpenClose:
             symbol="BTC/USDT",
             strategy_name="ema_rsi_crossover",
             broker="paper",
-            entry_time=datetime(2026, 1, 1, 10, 0, tzinfo=timezone.utc),
+            entry_time=datetime(2026, 1, 1, 10, 0, tzinfo=UTC),
             entry_price=100.0,
             qty=2.0,
             account_balance_at_entry=1000.0,
         )
         closed = repo.close_trade(
             trade.id,
-            exit_time=datetime(2026, 1, 1, 14, 0, tzinfo=timezone.utc),
+            exit_time=datetime(2026, 1, 1, 14, 0, tzinfo=UTC),
             exit_price=110.0,
             fees=1.0,
         )
@@ -46,7 +46,7 @@ class TestTradeRepositoryOpenClose:
     def test_close_trade_unknown_id_raises(self, db_session):
         repo = TradeRepository(db_session)
         with pytest.raises(KeyError):
-            repo.close_trade(999, exit_time=datetime.now(timezone.utc), exit_price=1.0)
+            repo.close_trade(999, exit_time=datetime.now(UTC), exit_price=1.0)
 
     def test_close_already_closed_trade_raises(self, db_session):
         repo = TradeRepository(db_session)
@@ -54,40 +54,40 @@ class TestTradeRepositoryOpenClose:
             symbol="BTC/USDT",
             strategy_name="s",
             broker="paper",
-            entry_time=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            entry_time=datetime(2026, 1, 1, tzinfo=UTC),
             entry_price=100.0,
             qty=1.0,
             account_balance_at_entry=1000.0,
         )
-        repo.close_trade(trade.id, exit_time=datetime(2026, 1, 1, 1, tzinfo=timezone.utc), exit_price=105.0)
+        repo.close_trade(trade.id, exit_time=datetime(2026, 1, 1, 1, tzinfo=UTC), exit_price=105.0)
         with pytest.raises(ValueError):
-            repo.close_trade(trade.id, exit_time=datetime(2026, 1, 1, 2, tzinfo=timezone.utc), exit_price=106.0)
+            repo.close_trade(trade.id, exit_time=datetime(2026, 1, 1, 2, tzinfo=UTC), exit_price=106.0)
 
 
 class TestOpenPositionCount:
     def test_counts_only_open_trades(self, db_session):
         repo = TradeRepository(db_session)
-        t1 = repo.open_trade("BTC/USDT", "s", "paper", datetime(2026, 1, 1, tzinfo=timezone.utc), 100.0, 1.0, 1000.0)
-        repo.open_trade("ETH/USDT", "s", "paper", datetime(2026, 1, 1, tzinfo=timezone.utc), 50.0, 1.0, 1000.0)
+        t1 = repo.open_trade("BTC/USDT", "s", "paper", datetime(2026, 1, 1, tzinfo=UTC), 100.0, 1.0, 1000.0)
+        repo.open_trade("ETH/USDT", "s", "paper", datetime(2026, 1, 1, tzinfo=UTC), 50.0, 1.0, 1000.0)
         assert repo.get_open_position_count() == 2
 
-        repo.close_trade(t1.id, exit_time=datetime(2026, 1, 1, 1, tzinfo=timezone.utc), exit_price=101.0)
+        repo.close_trade(t1.id, exit_time=datetime(2026, 1, 1, 1, tzinfo=UTC), exit_price=101.0)
         assert repo.get_open_position_count() == 1
 
     def test_filters_by_symbol(self, db_session):
         repo = TradeRepository(db_session)
-        repo.open_trade("BTC/USDT", "s", "paper", datetime(2026, 1, 1, tzinfo=timezone.utc), 100.0, 1.0, 1000.0)
-        repo.open_trade("ETH/USDT", "s", "paper", datetime(2026, 1, 1, tzinfo=timezone.utc), 50.0, 1.0, 1000.0)
+        repo.open_trade("BTC/USDT", "s", "paper", datetime(2026, 1, 1, tzinfo=UTC), 100.0, 1.0, 1000.0)
+        repo.open_trade("ETH/USDT", "s", "paper", datetime(2026, 1, 1, tzinfo=UTC), 50.0, 1.0, 1000.0)
         assert len(repo.get_open_trades(symbol="BTC/USDT")) == 1
 
 
 class TestDailyAggregation:
     def test_realized_pnl_pct_for_date_sums_same_day_trades(self, db_session):
         repo = TradeRepository(db_session)
-        t1 = repo.open_trade("BTC/USDT", "s", "paper", datetime(2026, 1, 1, 8, tzinfo=timezone.utc), 100.0, 1.0, 1000.0)
-        t2 = repo.open_trade("BTC/USDT", "s", "paper", datetime(2026, 1, 1, 9, tzinfo=timezone.utc), 100.0, 1.0, 1000.0)
-        repo.close_trade(t1.id, exit_time=datetime(2026, 1, 1, 10, tzinfo=timezone.utc), exit_price=110.0)  # +0.01
-        repo.close_trade(t2.id, exit_time=datetime(2026, 1, 1, 11, tzinfo=timezone.utc), exit_price=90.0)  # -0.01
+        t1 = repo.open_trade("BTC/USDT", "s", "paper", datetime(2026, 1, 1, 8, tzinfo=UTC), 100.0, 1.0, 1000.0)
+        t2 = repo.open_trade("BTC/USDT", "s", "paper", datetime(2026, 1, 1, 9, tzinfo=UTC), 100.0, 1.0, 1000.0)
+        repo.close_trade(t1.id, exit_time=datetime(2026, 1, 1, 10, tzinfo=UTC), exit_price=110.0)  # +0.01
+        repo.close_trade(t2.id, exit_time=datetime(2026, 1, 1, 11, tzinfo=UTC), exit_price=90.0)  # -0.01
 
         pct = repo.get_realized_pnl_pct_for_date(date(2026, 1, 1))
         assert pct == pytest.approx(0.0, abs=1e-9)
@@ -97,19 +97,19 @@ class TestDailyAggregation:
         tarihine (kapanis gunune) gore raporlanmali."""
         repo = TradeRepository(db_session)
         trade = repo.open_trade(
-            "BTC/USDT", "s", "paper", datetime(2026, 1, 1, 23, 0, tzinfo=timezone.utc), 100.0, 1.0, 1000.0
+            "BTC/USDT", "s", "paper", datetime(2026, 1, 1, 23, 0, tzinfo=UTC), 100.0, 1.0, 1000.0
         )
-        repo.close_trade(trade.id, exit_time=datetime(2026, 1, 2, 1, 0, tzinfo=timezone.utc), exit_price=110.0)
+        repo.close_trade(trade.id, exit_time=datetime(2026, 1, 2, 1, 0, tzinfo=UTC), exit_price=110.0)
 
         assert repo.get_realized_pnl_pct_for_date(date(2026, 1, 1)) == pytest.approx(0.0)
         assert repo.get_realized_pnl_pct_for_date(date(2026, 1, 2)) == pytest.approx(0.01)
 
     def test_get_daily_report_rows(self, db_session):
         repo = TradeRepository(db_session)
-        t1 = repo.open_trade("BTC/USDT", "s", "paper", datetime(2026, 1, 1, 8, tzinfo=timezone.utc), 100.0, 1.0, 1000.0)
-        t2 = repo.open_trade("BTC/USDT", "s", "paper", datetime(2026, 1, 2, 8, tzinfo=timezone.utc), 100.0, 1.0, 1000.0)
-        repo.close_trade(t1.id, exit_time=datetime(2026, 1, 1, 10, tzinfo=timezone.utc), exit_price=110.0)
-        repo.close_trade(t2.id, exit_time=datetime(2026, 1, 2, 10, tzinfo=timezone.utc), exit_price=90.0)
+        t1 = repo.open_trade("BTC/USDT", "s", "paper", datetime(2026, 1, 1, 8, tzinfo=UTC), 100.0, 1.0, 1000.0)
+        t2 = repo.open_trade("BTC/USDT", "s", "paper", datetime(2026, 1, 2, 8, tzinfo=UTC), 100.0, 1.0, 1000.0)
+        repo.close_trade(t1.id, exit_time=datetime(2026, 1, 1, 10, tzinfo=UTC), exit_price=110.0)
+        repo.close_trade(t2.id, exit_time=datetime(2026, 1, 2, 10, tzinfo=UTC), exit_price=90.0)
 
         rows = repo.get_daily_report(date(2026, 1, 1), date(2026, 1, 2))
         assert len(rows) == 2

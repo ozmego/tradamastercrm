@@ -24,12 +24,10 @@ def _make_backtesting_strategy(strategy_factory: StrategyFactory) -> type[Backte
             # sinirlandirilmis (lookahead-safe) bir DataFrame'dir.
             df = self.data.df
             signal = self._tc_strategy.generate_signal(df)
-            if signal is Signal.BUY:
-                if not self.position:
-                    self.buy()
-            elif signal is Signal.SELL:
-                if self.position:
-                    self.position.close()
+            if signal is Signal.BUY and not self.position:
+                self.buy()
+            elif signal is Signal.SELL and self.position:
+                self.position.close()
 
     return _Adapter
 

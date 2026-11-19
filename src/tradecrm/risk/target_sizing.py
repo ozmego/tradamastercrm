@@ -9,7 +9,7 @@ gecersiz kilamaz.
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -21,9 +21,9 @@ class SizingResult:
 
 def elapsed_fraction_of_utc_day(now: datetime | None = None) -> float:
     """UTC gununun ne kadarinin gectigini 0..1 arasinda dondurur."""
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     if now.tzinfo is None:
-        now = now.replace(tzinfo=timezone.utc)
+        now = now.replace(tzinfo=UTC)
     seconds_since_midnight = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
     return min(1.0, max(0.0, seconds_since_midnight / 86400.0))
 

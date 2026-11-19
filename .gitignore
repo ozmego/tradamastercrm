@@ -8,3 +8,8 @@ state/
 *.egg-info/
 build/
 dist/
+data_cache/
+.claude/
+frontend/node_modules/
+# vite build ciktisi (npm run build ile uretilir)
+src/tradecrm/api/static/

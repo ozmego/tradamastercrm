@@ -1,10 +1,13 @@
+from typing import ClassVar
+
+import numpy as np
 import pandas as pd
-import pandas_ta as ta
 
-from tradecrm.strategy.base import Signal, Strategy
+from tradecrm.strategy import indicators as ind
+from tradecrm.strategy.base import Signal, VectorizedStrategy
 
 
-class EmaRsiCrossoverStrategy(Strategy):
+class EmaRsiCrossoverStrategy(VectorizedStrategy):
     """Baslangic stratejisi: hizli/yavas EMA kesisimi + RSI filtresi.
 
     - EMA(fast) yukari yonlu EMA(slow)'u kesince VE RSI asiri-alim
@@ -15,6 +18,7 @@ class EmaRsiCrossoverStrategy(Strategy):
     """
 
     name = "ema_rsi_crossover"
+    param_grid: ClassVar[dict[str, list]] = {"fast_period": [9, 12, 15], "slow_period": [21, 26, 34]}
 
     def __init__(
         self,
@@ -31,33 +35,40 @@ class EmaRsiCrossoverStrategy(Strategy):
         self.rsi_overbought = rsi_overbought
         self.required_lookback = slow_period + rsi_period + 1
 
-    def generate_signal(self, df: pd.DataFrame) -> Signal:
-        if len(df) < self.required_lookback:
-            return Signal.HOLD
+    def params(self) -> dict:
+        return {
+            "fast_period": self.fast_period,
+            "slow_period": self.slow_period,
+            "rsi_period": self.rsi_period,
+            "rsi_overbought": self.rsi_overbought,
+        }
+
+    def generate_signals(self, df: pd.DataFrame) -> pd.Series:
+        n = len(df)
+        codes = np.zeros(n, dtype=np.int8)
+        if n < self.required_lookback:
+            return pd.Series(codes, index=df.index, name="signal")
 
         close = df["Close"]
-        ema_fast = ta.ema(close, length=self.fast_period)
-        ema_slow = ta.ema(close, length=self.slow_period)
-        rsi = ta.rsi(close, length=self.rsi_period)
+        diff = ind.ema(close, self.fast_period) - ind.ema(close, self.slow_period)
+        prev_diff = diff.shift(1)
+        rsi = ind.rsi(close, self.rsi_period)
 
-        if ema_fast is None or ema_slow is None or rsi is None:
-            return Signal.HOLD
-        if ema_fast.iloc[-2:].isna().any() or ema_slow.iloc[-2:].isna().any() or pd.isna(rsi.iloc[-1]):
-            return Signal.HOLD
+        # NaN karsilastirmalari False dondurur -> HOLD (bar-bar mantikla ayni).
+        crossed_up = (prev_diff <= 0) & (diff > 0)
+        crossed_down = (prev_diff >= 0) & (diff < 0)
+        buy = crossed_up & (rsi < self.rsi_overbought)
 
-        prev_diff = ema_fast.iloc[-2] - ema_slow.iloc[-2]
-        curr_diff = ema_fast.iloc[-1] - ema_slow.iloc[-1]
-
-        return decide_signal(prev_diff, curr_diff, rsi.iloc[-1], self.rsi_overbought)
+        codes[buy.to_numpy()] = 1
+        codes[crossed_down.to_numpy()] = -1
+        # Eski bar-bar davranis: len(df) < required_lookback iken HOLD.
+        codes[: self.required_lookback - 1] = 0
+        return pd.Series(codes, index=df.index, name="signal")
 
 
 def decide_signal(prev_diff: float, curr_diff: float, rsi_value: float, rsi_overbought: float) -> Signal:
     """Saf karar mantigi: EMA fark(fast-slow) kesisimi + RSI filtresi.
-
-    generate_signal'dan ayrildi ki gostergelerin (ema/rsi) kendisini
-    yeniden hesaplamadan, kesisim/filtre mantigi deterministik olarak
-    test edilebilsin.
-    """
+    generate_signals'taki vektorel mantigin skaler karsiligi (testler icin)."""
     crossed_up = prev_diff <= 0 and curr_diff > 0
     crossed_down = prev_diff >= 0 and curr_diff < 0
 

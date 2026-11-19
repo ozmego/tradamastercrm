@@ -14,7 +14,18 @@ TEST_DATABASE_URL = os.environ.get(
 
 @pytest.fixture(scope="session")
 def _test_engine():
+    from sqlalchemy.exc import OperationalError
+
     engine = create_engine(TEST_DATABASE_URL, pool_pre_ping=True)
+    try:
+        with engine.connect():
+            pass
+    except OperationalError:
+        pytest.exit(
+            "Test PostgreSQL'ine baglanilamadi. Yerelde 'docker compose up -d' calistirin "
+            "(CI'da .github/workflows/tests.yml servisi ayaga kaldirir). URL: TEST_DATABASE_URL",
+            returncode=3,
+        )
     SQLModel.metadata.create_all(engine)
     yield engine
     SQLModel.metadata.drop_all(engine)

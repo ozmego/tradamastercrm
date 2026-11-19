@@ -16,4 +16,4 @@ def test_settings_defaults() -> None:
     settings = Settings(_env_file=None)
     assert settings.trading_enabled is False
     assert settings.dry_run is True
-    assert settings.total_capital_allocation_pct == 0.75
+    assert settings.total_capital_allocation_pct == 0.35

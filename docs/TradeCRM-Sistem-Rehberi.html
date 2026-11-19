@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>TradeCRM — Sistem Rehberi</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+  :root {
+    --ink: #0f1723; --muted: #556070; --line: #d9dee6; --soft: #f4f6f9;
+    --gold: #a8780c; --accent: #2563eb; --gain: #048554; --loss: #cf223e; --warn: #a66f00;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Segoe UI", "Inter", Arial, sans-serif; color: var(--ink); font-size: 10.2pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 24pt; margin: 0 0 4mm; letter-spacing: -0.3px; }
+  h2 { font-size: 15pt; margin: 0 0 3mm; padding-bottom: 1.5mm; border-bottom: 2px solid var(--gold); break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 5mm 0 1.5mm; break-after: avoid; }
+  p { margin: 0 0 2.4mm; }
+  ul, ol { margin: 0 0 2.5mm; padding-left: 5.5mm; }
+  li { margin-bottom: 1mm; }
+  code, .mono { font-family: Consolas, "Cascadia Mono", monospace; font-size: 9.2pt; background: var(--soft); padding: 0 1mm; border-radius: 2px; }
+  pre { font-family: Consolas, monospace; font-size: 8.8pt; background: var(--soft); border: 1px solid var(--line); border-radius: 4px; padding: 2.5mm 3mm; margin: 0 0 3mm; white-space: pre-wrap; }
+  table { width: 100%; border-collapse: collapse; margin: 1mm 0 3.5mm; font-size: 9.2pt; break-inside: auto; }
+  tr { break-inside: avoid; }
+  th { text-align: left; background: var(--soft); border-bottom: 1.5px solid var(--line); padding: 1.6mm 2mm; font-weight: 600; }
+  td { border-bottom: 1px solid var(--line); padding: 1.5mm 2mm; vertical-align: top; }
+  td.num, th.num { text-align: right; font-family: Consolas, monospace; white-space: nowrap; }
+  section { break-before: page; }
+  .lead { font-size: 11.2pt; color: #2a3443; }
+  .muted { color: var(--muted); }
+  .box { border: 1px solid var(--line); border-left: 4px solid var(--accent); background: #f7f9fd; border-radius: 4px; padding: 2.5mm 3.5mm; margin: 2mm 0 3.5mm; break-inside: avoid; }
+  .box.warn { border-left-color: var(--warn); background: #fdf9ef; }
+  .box.loss { border-left-color: var(--loss); background: #fdf3f5; }
+  .box.gain { border-left-color: var(--gain); background: #f1faf6; }
+  .box b.t { display: block; margin-bottom: 1mm; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .card { border: 1px solid var(--line); border-radius: 5px; padding: 3mm; break-inside: avoid; }
+  .card h4 { margin: 0 0 1.5mm; font-size: 10.2pt; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 3mm 0 4mm; }
+  .kpi { border: 1px solid var(--line); border-radius: 5px; padding: 2.5mm 3mm; }
+  .kpi .l { font-size: 7.6pt; letter-spacing: 0.6px; text-transform: uppercase; color: var(--muted); }
+  .kpi .v { font-size: 13pt; font-weight: 600; margin-top: 0.5mm; }
+  .pill { display: inline-block; padding: 0 2mm; border-radius: 3mm; font-size: 8.4pt; font-weight: 600; }
+  .pill.on { background: #e3f4ec; color: var(--gain); }
+  .pill.off { background: #eef0f3; color: var(--muted); }
+  .pill.no { background: #fbe7ea; color: var(--loss); }
+  figure { margin: 2mm 0 4mm; break-inside: avoid; }
+  figcaption { font-size: 8.6pt; color: var(--muted); margin-top: 1mm; }
+  svg text { font-family: "Segoe UI", Arial, sans-serif; }
+  /* Kapak */
+  .cover { height: 255mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover .brand { display: flex; align-items: center; gap: 3mm; color: var(--gold); font-weight: 700; letter-spacing: 1px; font-size: 10pt; }
+  .cover .title { margin-top: 55mm; }
+  .cover .title h1 { font-size: 34pt; }
+  .cover .title .sub { font-size: 14pt; color: #2a3443; }
+  .cover .meta { border-top: 2px solid var(--gold); padding-top: 4mm; font-size: 9.5pt; color: var(--muted); }
+  .tight { font-size: 9.4pt; }
+  .tight table { font-size: 8.6pt; margin-bottom: 2.5mm; }
+  .tight td, .tight th { padding: 1.1mm 1.8mm; }
+  .tight h3 { margin-top: 3.5mm; }
+  .tight pre { font-size: 8.2pt; padding: 2mm 2.5mm; }
+  .tight .card { padding: 2.2mm 3mm; }
+  .toc { columns: 2; column-gap: 8mm; font-size: 10pt; }
+  .toc div { break-inside: avoid; padding: 0.8mm 0; border-bottom: 1px dotted var(--line); }
+  .toc span { color: var(--gold); font-weight: 700; display: inline-block; width: 7mm; }
+</style>
+</head>
+<body>
+
+<!-- ============================== KAPAK ============================== -->
+<div class="cover">
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 34 34"><rect x="1" y="1" width="32" height="32" rx="7" fill="none" stroke="#a8780c" stroke-width="2"/><rect x="8" y="12" width="4" height="12" fill="#a8780c"/><line x1="10" y1="8" x2="10" y2="27" stroke="#a8780c" stroke-width="1.5"/><rect x="15" y="9" width="4" height="9" fill="#a8780c"/><line x1="17" y1="6" x2="17" y2="21" stroke="#a8780c" stroke-width="1.5"/><rect x="22" y="14" width="4" height="7" fill="#a8780c"/><line x1="24" y1="11" x2="24" y2="25" stroke="#a8780c" stroke-width="1.5"/></svg>
+    TRADECRM
+  </div>
+  <div class="title">
+    <h1>Sistem nasıl çalışır?</h1>
+    <div class="sub">Strateji, risk katmanları, süreçler, admin paneli ve günlük işletim rehberi</div>
+    <p class="lead" style="margin-top:8mm; max-width:150mm">
+      Bu belge, TradeCRM'in bir işlemi nasıl açıp kapattığını, sizi hangi kuralların koruduğunu,
+      arka planda hangi süreçlerin çalıştığını ve sistemi günlük olarak nasıl izleyeceğinizi anlatır.
+    </p>
+  </div>
+  <div class="meta">
+    Durum tarihi: 18 Kasım 2026 · Sistem modu: <b>paper (sanal para)</b> · Profil: <b>donchian_fng</b>, günlük mum, 5 coin (BTC, ETH, SOL, BNB, XRP)<br>
+    Bu belgedeki tüm parametreler kaynak koddaki varsayılan değerlerdir; kod değişirse belge de güncellenmelidir.
+  </div>
+</div>
+
+<!-- ============================== İÇİNDEKİLER + ÖZET ============================== -->
+<section>
+  <h2>İçindekiler</h2>
+  <div class="toc">
+    <div><span>1</span>Bir bakışta</div>
+    <div><span>2</span>Mimari: parçalar ve bağlantılar</div>
+    <div><span>3</span>Bir günlük döngü (tick)</div>
+    <div><span>4</span>Strateji: donchian_fng</div>
+    <div><span>5</span>Çıkış kuralları</div>
+    <div><span>6</span>Pozisyon büyüklüğü</div>
+    <div><span>7</span>Risk katmanları</div>
+    <div><span>8</span>Emir güvenliği</div>
+    <div><span>9</span>Performans bozulma alarmı</div>
+    <div><span>10</span>Strateji nasıl doğrulandı</div>
+    <div><span>11</span>Veri toplama</div>
+    <div><span>12</span>Admin paneli</div>
+    <div><span>13</span>K/Z panosu ve raporlar</div>
+    <div><span>14</span>Süreçler ve otomatik başlatma</div>
+    <div><span>15</span>Günlük işletim ve sorun giderme</div>
+    <div><span>16</span>Sınırlar ve dürüst uyarılar</div>
+    <div><span>17</span>Sözlük</div>
+  </div>
+
+  <h3 style="margin-top:8mm">Bu belge nasıl okunur?</h3>
+  <p>Bölüm 1–3 sistemin genel resmini verir; her gün izleyecekleriniz için bölüm 13–15 yeterlidir. Strateji ve risk kurallarının
+  ayrıntısı bölüm 4–9'da, stratejinin neden henüz "onaylı" sayılmadığı bölüm 10'dadır. Bilmediğiniz bir terim için bölüm 17'deki sözlüğe bakın.</p>
+  <div class="box">
+    <b class="t">Kısaca</b>
+    Sistem şu an sanal parayla, her gece Türkiye saatiyle 03:00'te 5 coini değerlendiriyor; uygun kırılım olursa hesabın %1'ini riske atarak
+    alıyor, stop veya sinyal gelince satıyor. Gerçek para kullanılmıyor ve strateji henüz canlıya onaylı değil.
+  </div>
+</section>
+
+<section>
+  <h2>1. Bir bakışta</h2>
+  <p class="lead">TradeCRM, Binance spot piyasasındaki kripto paraları kurallı bir stratejiyle alıp satan, Python ile yazılmış bir
+  algoritmik işlem sistemidir. Şu an <b>sanal parayla (paper)</b> çalışır: gerçek fiyatları kullanır, ama emirler borsaya
+  gitmez, veritabanında simüle edilir.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="l">Mod</div><div class="v">Paper</div><span class="muted" style="font-size:8.5pt">gerçek para yok</span></div>
+    <div class="kpi"><div class="l">Sanal sermaye</div><div class="v">10.000 USDT</div><span class="muted" style="font-size:8.5pt">hesap: paper</span></div>
+    <div class="kpi"><div class="l">Semboller</div><div class="v">5 coin</div><span class="muted" style="font-size:8.5pt">günlük mum</span></div>
+    <div class="kpi"><div class="l">Karar anı</div><div class="v">03:00 TR</div><span class="muted" style="font-size:8.5pt">00:00 UTC, her gün</span></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>Sistem ne yapar</h4>
+      <ul>
+        <li>Her gün mum kapanınca 5 coini (BTC, ETH, SOL, BNB, XRP) değerlendirir; koşullar sağlanırsa kendiliğinden alır, stop veya sinyal gelince satar.</li>
+        <li>İşlem başına sermayenin %1'ini riske atar; açık pozisyonların toplamı sermayenin %35'ini geçemez.</li>
+        <li>Zarar, veri sorunu veya performans bozulması olduğunda yeni alımları kendiliğinden durdurur.</li>
+        <li>Her şeyi kaydeder: işlemler, emirler, risk olayları, panelde kimin ne yaptığı.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Sistem ne yapmaz</h4>
+      <ul>
+        <li>Kendiliğinden gerçek parayla işlem yapmaz: KuCoin canlı bağlantısı hazır, ama emirler ancak sizin açacağınız üç kilitten sonra gider.</li>
+        <li>Açığa satış, kaldıraç, vadeli işlem yapmaz: yalnızca spot alım ve satış.</li>
+        <li>Gün içinde stop izlemez: kararlar günlük mum kapanışlarında verilir.</li>
+        <li>Kâr garantisi vermez: strateji henüz onay kapısını geçmedi (bkz. bölüm 10).</li>
+        <li>Günlük kâr hedefi kovalamaz: +%5 hedefe ulaşınca o gün alımı durdurur, ama hedefe ulaşmak için pozisyon büyütmez.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Şu anki durum (18 Kasım 2026)</h3>
+  <table>
+    <tr><th>Bileşen</th><th>Durum</th><th>Açıklama</th></tr>
+    <tr><td>Paper runner</td><td><span class="pill on">Çalışıyor</span></td><td>donchian_fng, 1d, 5 coin; oturum açılışında kendiliğinden başlar</td></tr>
+    <tr><td>Alım izni (paper)</td><td><span class="pill on">Açık</span></td><td>Risk sayfasından ya da <code>tradecrm risk disable-trading</code> ile kapatılabilir</td></tr>
+    <tr><td>Veri toplayıcı</td><td><span class="pill on">Çalışıyor</span></td><td>Saatlik open interest ve long/short; 45 gün saklama</td></tr>
+    <tr><td>Admin paneli</td><td><span class="pill on">Çalışıyor</span></td><td>http://127.0.0.1:8000 · otomatik başlatması kapalı (Süreçler sayfasından açılabilir)</td></tr>
+    <tr><td>Telegram bildirimleri</td><td><span class="pill off">Tanımsız</span></td><td><code>.env</code> içinde TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID boş</td></tr>
+    <tr><td>Canlı (gerçek para)</td><td><span class="pill off">Hazır, kapalı</span></td><td>KuCoin adaptörü yazıldı (Binance da destekli); anahtar tanımlı değil, emir kilitleri kapalı. Strateji onay kapısını geçmeden önerilmiyor</td></tr>
+  </table>
+</section>
+
+<!-- ============================== MİMARİ ============================== -->
+<section>
+  <h2>2. Mimari: parçalar ve bağlantılar</h2>
+  <p>Sistem bilgisayarınızda çalışan birbirinden bağımsız üç arka plan sürecinden ve bunların ortak kullandığı bir
+  PostgreSQL veritabanından oluşur. Süreçler birbirleriyle doğrudan konuşmaz; her şey veritabanı üzerinden paylaşılır.
+  Bu sayede biri durursa diğerleri çalışmaya devam eder.</p>
+
+  <figure>
+  <svg viewBox="0 0 700 360" width="100%">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#556070"/></marker></defs>
+    <!-- dış kaynaklar -->
+    <rect x="10" y="10" width="680" height="62" rx="6" fill="#f4f6f9" stroke="#d9dee6"/>
+    <text x="22" y="30" font-size="11" font-weight="600" fill="#556070">İNTERNET (yalnızca okuma — anahtar gerekmez)</text>
+    <rect x="22" y="38" width="150" height="26" rx="4" fill="#fff" stroke="#d9dee6"/><text x="97" y="55" font-size="10.5" text-anchor="middle">Binance spot fiyat/mum</text>
+    <rect x="182" y="38" width="160" height="26" rx="4" fill="#fff" stroke="#d9dee6"/><text x="262" y="55" font-size="10.5" text-anchor="middle">Binance vadeli (OI, L/S)</text>
+    <rect x="352" y="38" width="160" height="26" rx="4" fill="#fff" stroke="#d9dee6"/><text x="432" y="55" font-size="10.5" text-anchor="middle">alternative.me (Korku/Açgözlülük)</text>
+    <rect x="522" y="38" width="156" height="26" rx="4" fill="#fff" stroke="#d9dee6"/><text x="600" y="55" font-size="10.5" text-anchor="middle">Telegram (bildirim, giden)</text>
+    <!-- süreçler -->
+    <rect x="22" y="120" width="200" height="92" rx="6" fill="#fff" stroke="#a8780c" stroke-width="1.6"/>
+    <text x="122" y="142" font-size="12" font-weight="700" text-anchor="middle">Paper runner</text>
+    <text x="122" y="160" font-size="9.5" text-anchor="middle" fill="#556070">tradecrm live run</text>
+    <text x="122" y="178" font-size="9.5" text-anchor="middle">strateji → risk → paper broker</text>
+    <text x="122" y="194" font-size="9.5" text-anchor="middle">her gün 00:00:05 UTC</text>
+    <rect x="250" y="120" width="200" height="92" rx="6" fill="#fff" stroke="#a8780c" stroke-width="1.6"/>
+    <text x="350" y="142" font-size="12" font-weight="700" text-anchor="middle">Veri toplayıcı</text>
+    <text x="350" y="160" font-size="9.5" text-anchor="middle" fill="#556070">tradecrm collect run</text>
+    <text x="350" y="178" font-size="9.5" text-anchor="middle">open interest + long/short</text>
+    <text x="350" y="194" font-size="9.5" text-anchor="middle">her saat :02</text>
+    <rect x="478" y="120" width="200" height="92" rx="6" fill="#fff" stroke="#a8780c" stroke-width="1.6"/>
+    <text x="578" y="142" font-size="12" font-weight="700" text-anchor="middle">Admin paneli</text>
+    <text x="578" y="160" font-size="9.5" text-anchor="middle" fill="#556070">tradecrm admin serve</text>
+    <text x="578" y="178" font-size="9.5" text-anchor="middle">web arayüzü + API</text>
+    <text x="578" y="194" font-size="9.5" text-anchor="middle">127.0.0.1:8000</text>
+    <!-- DB -->
+    <rect x="160" y="262" width="380" height="74" rx="8" fill="#eef3fd" stroke="#2563eb" stroke-width="1.6"/>
+    <text x="350" y="285" font-size="12.5" font-weight="700" text-anchor="middle">PostgreSQL (Docker, port 5434)</text>
+    <text x="350" y="304" font-size="9.5" text-anchor="middle">işlemler · emirler · hesaplar · equity · risk olayları · metrikler</text>
+    <text x="350" y="320" font-size="9.5" text-anchor="middle">kullanıcılar · oturumlar · panel kaydı · backtest · raporlar · toplayıcı çalışmaları</text>
+    <!-- oklar -->
+    <line x1="97" y1="66" x2="97" y2="118" stroke="#556070" stroke-width="1.3" marker-end="url(#a)"/>
+    <line x1="432" y1="66" x2="140" y2="118" stroke="#556070" stroke-width="1.3" marker-end="url(#a)"/>
+    <line x1="262" y1="66" x2="330" y2="118" stroke="#556070" stroke-width="1.3" marker-end="url(#a)"/>
+    <line x1="200" y1="118" x2="560" y2="68" stroke="#556070" stroke-width="1.1" stroke-dasharray="4 3" marker-end="url(#a)"/>
+    <line x1="122" y1="214" x2="260" y2="260" stroke="#2563eb" stroke-width="1.4" marker-end="url(#a)"/>
+    <line x1="350" y1="214" x2="350" y2="260" stroke="#2563eb" stroke-width="1.4" marker-end="url(#a)"/>
+    <line x1="578" y1="214" x2="440" y2="260" stroke="#2563eb" stroke-width="1.4" marker-end="url(#a)"/>
+  </svg>
+  <figcaption>Şekil 1 — Bileşenler. Kesikli ok: bildirimler (Telegram tanımlıysa). Panel, runner ve toplayıcıyı süreç olarak başlatıp durdurabilir.</figcaption>
+  </figure>
+
+  <table>
+    <tr><th style="width:24%">Parça</th><th>Görevi</th><th style="width:22%">Nerede</th></tr>
+    <tr><td><b>Paper runner</b></td><td>Strateji sinyalini üretir, risk kurallarından geçirir, paper broker üzerinden işlem açar/kapatır, hesap değerini kaydeder, drift alarmını ve haftalık raporu çalıştırır.</td><td><code>runner/</code>, <code>logs/live.log</code></td></tr>
+    <tr><td><b>Paper broker</b></td><td>Borsa yerine geçen simülasyon: o anki Binance fiyatından, %0,1 komisyonla doldurur. Nakit = başlangıç sermayesi + gerçekleşen K/Z − açık pozisyon maliyeti.</td><td><code>broker/paper_adapter.py</code></td></tr>
+    <tr><td><b>Veri toplayıcı</b></td><td>Binance'in yalnızca ~30 gün sakladığı open interest ve long/short verisini saatlik toplar ve geçmiş biriktirir.</td><td><code>data/collectors/</code>, <code>logs/collector.log</code></td></tr>
+    <tr><td><b>Admin paneli</b></td><td>İzleme, risk kontrolleri, süreç yönetimi, backtest, raporlar. Giriş zorunlu.</td><td><code>api/</code> + <code>frontend/</code></td></tr>
+    <tr><td><b>Veritabanı</b></td><td>Tek doğruluk kaynağı. Risk bayraklarının anlık durumu, son olay kaydından okunur.</td><td>Docker: <code>tradecrm-postgres</code></td></tr>
+    <tr><td><b>Denetim kaydı</b></td><td>Runner'ın her kararı (sinyal, engel, emir, hata) satır satır JSON olarak yazılır.</td><td><code>logs/audit.jsonl</code></td></tr>
+  </table>
+</section>
+
+<!-- ============================== TICK ============================== -->
+<section>
+  <h2>3. Bir günlük döngü (tick)</h2>
+  <p>Runner zamanını mum kapanışlarına hizalar. Günlük mumda bu, her gün <b>00:00:05 UTC</b> (Türkiye saatiyle 03:00:05)
+  demektir. Her tick'te 5 sembol sırayla aynı adımlardan geçer. Bilgisayar o saatte kapalıysa veya uykudaysa tick kaçar;
+  runner açılınca hemen bir tick çalıştırır.</p>
+
+  <figure>
+  <svg viewBox="0 0 700 300" width="100%">
+    <defs><marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#556070"/></marker></defs>
+    <g font-size="10">
+      <rect x="10" y="20" width="120" height="58" rx="6" fill="#f4f6f9" stroke="#d9dee6"/><text x="70" y="40" text-anchor="middle" font-weight="700">1 · Uzlaştır</text><text x="70" y="56" text-anchor="middle">yarım kalan emirleri</text><text x="70" y="69" text-anchor="middle">netleştir</text>
+      <rect x="150" y="20" width="120" height="58" rx="6" fill="#f4f6f9" stroke="#d9dee6"/><text x="210" y="40" text-anchor="middle" font-weight="700">2 · Veri</text><text x="210" y="56" text-anchor="middle">1000 kapanmış mum +</text><text x="210" y="69" text-anchor="middle">Korku/Açgözlülük</text>
+      <rect x="290" y="20" width="120" height="58" rx="6" fill="#f4f6f9" stroke="#d9dee6"/><text x="350" y="40" text-anchor="middle" font-weight="700">3 · Kontrol</text><text x="350" y="56" text-anchor="middle">bayat/eksik mum,</text><text x="350" y="69" text-anchor="middle">fiyat sapması</text>
+      <rect x="430" y="20" width="120" height="58" rx="6" fill="#f4f6f9" stroke="#d9dee6"/><text x="490" y="40" text-anchor="middle" font-weight="700">4 · Hesap</text><text x="490" y="56" text-anchor="middle">nakit, pozisyonlar,</text><text x="490" y="69" text-anchor="middle">günlük zarar</text>
+      <rect x="570" y="20" width="120" height="58" rx="6" fill="#f4f6f9" stroke="#d9dee6"/><text x="630" y="40" text-anchor="middle" font-weight="700">5 · Sinyal</text><text x="630" y="56" text-anchor="middle">AL / SAT / BEKLE</text><text x="630" y="69" text-anchor="middle">(filtreler dahil)</text>
+      <line x1="130" y1="49" x2="148" y2="49" stroke="#556070" marker-end="url(#b)"/><line x1="270" y1="49" x2="288" y2="49" stroke="#556070" marker-end="url(#b)"/><line x1="410" y1="49" x2="428" y2="49" stroke="#556070" marker-end="url(#b)"/><line x1="550" y1="49" x2="568" y2="49" stroke="#556070" marker-end="url(#b)"/>
+      <!-- karar -->
+      <polygon points="630,100 700,135 630,170 560,135" fill="#fff" stroke="#a8780c" stroke-width="1.5"/><text x="630" y="132" text-anchor="middle" font-weight="700">Açık pozisyon</text><text x="630" y="146" text-anchor="middle" font-weight="700">var mı?</text>
+      <line x1="630" y1="78" x2="630" y2="98" stroke="#556070" marker-end="url(#b)"/>
+      <!-- evet -->
+      <line x1="560" y1="135" x2="452" y2="135" stroke="#556070" marker-end="url(#b)"/><text x="508" y="128" text-anchor="middle" fill="#556070">evet</text>
+      <rect x="250" y="105" width="200" height="62" rx="6" fill="#f1faf6" stroke="#048554"/><text x="350" y="124" text-anchor="middle" font-weight="700">6a · Çıkışı yönet</text><text x="350" y="140" text-anchor="middle">stop / başabaş / takip eden stop</text><text x="350" y="155" text-anchor="middle">tetiklendiyse ya da SAT → sat</text>
+      <!-- hayır -->
+      <line x1="630" y1="170" x2="630" y2="200" stroke="#556070" marker-end="url(#b)"/><text x="645" y="190" fill="#556070">hayır</text>
+      <rect x="470" y="202" width="220" height="80" rx="6" fill="#eef3fd" stroke="#2563eb"/><text x="580" y="221" text-anchor="middle" font-weight="700">6b · Sinyal AL ise</text><text x="580" y="237" text-anchor="middle">veri/hesap sorunu yok mu? alım izni,</text><text x="580" y="251" text-anchor="middle">kill-switch, devre kesiciler, %35 tavan</text><text x="580" y="266" text-anchor="middle">→ boyutla (%1 risk) → al</text>
+      <rect x="10" y="200" width="420" height="82" rx="6" fill="#fff" stroke="#d9dee6"/>
+      <text x="22" y="220" font-weight="700">Tick sonunda (tüm semboller bittikten sonra)</text>
+      <text x="22" y="238">• Hesap değeri (equity) veritabanına kaydedilir → grafikler ve raporlar</text>
+      <text x="22" y="254">• Drift alarmı: son 30 işlemin performansı backtest beklentisiyle karşılaştırılır</text>
+      <text x="22" y="270">• Her pazartesi 08:00 UTC: haftalık rapor (Telegram + Raporlar sekmesi)</text>
+    </g>
+  </svg>
+  <figcaption>Şekil 2 — Bir sembol için tick akışı. Satış yolu her zaman açıktır; alım yolu en çok kontrolden geçen yoldur.</figcaption>
+  </figure>
+
+  <h3>Neden "kapanmış mum"?</h3>
+  <p>Sinyal yalnızca kapanmış mumlardan üretilir. Henüz bitmemiş günün fiyatı gün içinde değişeceği için, yarım mumla verilen
+  karar akşam geri alınabilecek bir karar olur. Backtest de aynı kuralla çalıştığı için canlı ve test sonuçları karşılaştırılabilir kalır.</p>
+
+  <h3>"Bayat sinyal" koruması</h3>
+  <p>Son kapanmış mum, şu andan <b>yarım mumdan daha eski</b>yse (günlük mumda 12 saat) alım yapılmaz. Örnek: runner öğleden sonra
+  başlatılırsa o günün 00:00 kapanışına dayanan bir AL sinyali uygulanmaz; bir sonraki gece yeni mumla karar verilir.
+  18 Kasım'da runner ilk açıldığında bütün sembollerde gördüğünüz <code>stale_signal</code> notu budur — hata değil, koruma.</p>
+</section>
+
+<!-- ============================== STRATEJİ ============================== -->
+<section>
+  <h2>4. Strateji: donchian_fng</h2>
+  <p>Çalışan her şey bir <b>profil</b>dir: strateji + giriş filtreleri + çıkış kuralları + pozisyon boyutu + devre kesiciler.
+  Backtest ile canlı runner aynı profil nesnesini ve aynı fonksiyonları kullanır; iki ortamın farklı ayarlarla çalışma riski yoktur.
+  Aktif profil <code>donchian_fng</code>, bir <b>trend takip</b> stratejisidir: yükselen trendin başında girip trend sürdükçe kalmaya çalışır.</p>
+
+  <table>
+    <tr><th style="width:26%">Kural</th><th>Ne demek</th><th style="width:22%">Parametre</th></tr>
+    <tr><td><b>AL sinyali</b><br><span class="muted">Donchian kırılımı</span></td><td>Günlük kapanış, önceki <b>40 günün en yüksek</b> fiyatını aşarsa.</td><td class="mono">entry_period = 40</td></tr>
+    <tr><td><b>SAT sinyali</b></td><td>Günlük kapanış, önceki <b>20 günün en düşük</b> fiyatının altına inerse.</td><td class="mono">exit_period = 20</td></tr>
+    <tr><td><b>Trend filtresi</b></td><td>Fiyat 200 günlük üssel ortalamanın (EMA200) <b>üstünde</b> olmalı <b>ve</b> EMA200 son 24 günde yükselmiş olmalı. Düşüş trendindeki kırılımlar alınmaz.</td><td class="mono">ema 200, eğim 24 bar</td></tr>
+    <tr><td><b>Korku/Açgözlülük filtresi</b></td><td>Kripto Korku &amp; Açgözlülük Endeksi <b>80'in üstündeyse</b> (aşırı açgözlülük, zirve riski) alım ertelenir. Endekse ulaşılamazsa alım engellenmez, denetim kaydına not düşülür.</td><td class="mono">fng ≤ 80</td></tr>
+  </table>
+
+  <div class="box">
+    <b class="t">Filtreler yalnızca ALIMI engeller</b>
+    Hiçbir filtre satışı durdurmaz. Bir pozisyondan çıkış her koşulda mümkündür — bu, sistemin tamamında geçerli olan temel ilkedir.
+  </div>
+
+  <h3>Örnek</h3>
+  <p>ETH'nin son 40 günlük en yükseği 3.400 USDT olsun. Bugünkü mum 3.450'de kapandı, fiyat EMA200'ün (2.900) üstünde, EMA200 yükseliyor,
+  Korku/Açgözlülük endeksi 64. Dört koşul da sağlandığı için <b>AL</b> sinyali oluşur ve risk katmanlarına gönderilir (bölüm 7).
+  Endeks 84 olsaydı aynı kırılım alınmazdı.</p>
+
+  <h3>Neden bu ayarlar?</h3>
+  <p>Seçim walk-forward testlerine dayanır (bölüm 10). Kısa vadeli EMA/RSI stratejileri ve ortalamaya dönüş (RSI2) test edildi ve elendi.
+  Kırılım + trend filtresi günlük mumda en iyi sonucu verdi; Korku/Açgözlülük filtresi kâr faktörünü artırdı. Hacim teyidi, aşırı volatilite
+  filtresi, bir mum teyit bekleme ve BTC trend filtresi ayrı ayrı test edildi; hiçbirinin katkısı istatistiksel olarak anlamlı çıkmadığı
+  için eklenmedi (aşırı uyum koruması).</p>
+</section>
+
+<!-- ============================== ÇIKIŞ ============================== -->
+<section>
+  <h2>5. Çıkış kuralları</h2>
+  <p>Pozisyon açıldığı anda bir stop seviyesi belirlenir. Ölçü birimi <b>ATR</b>'dir (Average True Range, son 14 günün ortalama
+  günlük fiyat aralığı) — böylece stop, coinin oynaklığına göre kendini ayarlar. Trend stratejisinde dar stop gürültüyle tetiklendiği
+  için stoplar geniş tutulur ve kâr al seviyesi kullanılmaz: kârı takip eden stop korur.</p>
+
+  <table>
+    <tr><th style="width:24%">Kural</th><th>Ne olur</th><th style="width:18%">Değer</th></tr>
+    <tr><td><b>İlk stop</b></td><td>Giriş fiyatının 3 ATR altı. Bu mesafeye <b>1R</b> denir (işlem başına riske atılan tutar).</td><td class="mono">3 × ATR(14)</td></tr>
+    <tr><td><b>Başabaş</b></td><td>Fiyat girişten 1,5R yükselince stop giriş fiyatına çekilir: işlem artık zararla kapanamaz (komisyon hariç).</td><td class="mono">1,5 R</td></tr>
+    <tr><td><b>Takip eden stop</b></td><td>Başabaştan sonra stop, görülen en yüksek fiyatın 4 ATR altını izler; yalnızca yukarı hareket eder.</td><td class="mono">en yüksek − 4 × ATR</td></tr>
+    <tr><td><b>Kâr al</b></td><td>Yok — trendin koşmasına izin verilir.</td><td class="mono">—</td></tr>
+    <tr><td><b>Sinyal çıkışı</b></td><td>Kapanış 20 günlük en düşüğün altına inerse (stop tetiklenmese bile) satılır.</td><td class="mono">20 gün</td></tr>
+  </table>
+
+  <figure>
+  <svg viewBox="0 0 700 210" width="100%">
+    <g font-size="10">
+      <line x1="40" y1="180" x2="680" y2="180" stroke="#d9dee6"/>
+      <polyline points="40,150 90,140 140,120 190,128 240,100 290,92 340,70 390,80 440,52 490,60 540,40 590,72 640,110" fill="none" stroke="#0f1723" stroke-width="2"/>
+      <line x1="40" y1="150" x2="190" y2="150" stroke="#2563eb" stroke-dasharray="5 3"/><text x="120" y="163" fill="#2563eb">giriş</text>
+      <line x1="40" y1="186" x2="240" y2="186" stroke="#cf223e" stroke-width="2"/><text x="44" y="200" fill="#cf223e">ilk stop = giriş − 3 ATR (1R)</text>
+      <line x1="240" y1="150" x2="390" y2="150" stroke="#a66f00" stroke-width="2"/><text x="250" y="166" fill="#a66f00">başabaş: stop → giriş (1,5R'de)</text>
+      <polyline points="390,140 440,112 490,112 540,100 590,100 640,100" fill="none" stroke="#048554" stroke-width="2"/>
+      <text x="455" y="130" fill="#048554">takip eden stop (zirve − 4 ATR)</text>
+      <circle cx="640" cy="110" r="5" fill="#048554"/><text x="650" y="104" fill="#048554" font-weight="700">çıkış</text>
+    </g>
+  </svg>
+  <figcaption>Şekil 3 — Bir işlemin stop seviyesinin zaman içinde değişimi (temsili).</figcaption>
+  </figure>
+
+  <div class="box warn">
+    <b class="t">Önemli: stoplar gün içinde değil, günlük kapanışta uygulanır</b>
+    Runner yalnızca günde bir kez (mum kapanışında) çalışır. Fiyat gün içinde stopun altına inerse çıkış, ertesi tick'te
+    <b>o anki fiyattan</b> yapılır. Fiyat gece boyunca daha da düşerse gerçekleşen çıkış stop seviyesinden kötü olabilir; sert
+    düşüşlerde 1R'den büyük kayıp mümkündür. Backtest bu durumu, stopun mum içinde tetiklendiğini varsayarak daha iyimser modelleyebilir.
+    Ayrıca stop, giriş anındaki ATR ile kurulur ve her tick'te giriş sonrasındaki tüm mumlardan yeniden hesaplanır (kaçırılan tick'ler
+    seviye atlatmaz).
+  </div>
+</section>
+
+<!-- ============================== BOYUT ============================== -->
+<section>
+  <h2>6. Pozisyon büyüklüğü</h2>
+  <p>Her işlemde, stop tetiklenirse kaybedilecek tutar hesap değerinin <b>%1'i</b> olacak şekilde miktar seçilir. Oynak bir coinde stop
+  uzak olduğu için daha az alınır; sakin bir coinde daha çok. Böylece her işlemin riski eşitlenir.</p>
+  <pre>miktar = (hesap değeri × %1) / (giriş fiyatı − stop fiyatı)</pre>
+
+  <h3>Örnek hesap</h3>
+  <table>
+    <tr><th>Adım</th><th class="num">Değer</th></tr>
+    <tr><td>Hesap değeri</td><td class="num">10.000 USDT</td></tr>
+    <tr><td>Riske atılacak tutar (%1)</td><td class="num">100 USDT</td></tr>
+    <tr><td>BTC giriş fiyatı</td><td class="num">65.000</td></tr>
+    <tr><td>ATR(14)</td><td class="num">2.200</td></tr>
+    <tr><td>Stop = 65.000 − 3 × 2.200</td><td class="num">58.400</td></tr>
+    <tr><td>Miktar = 100 / 6.600</td><td class="num">0,01515 BTC</td></tr>
+    <tr><td>Pozisyon büyüklüğü</td><td class="num">≈ 985 USDT (hesabın ≈ %9,9'u)</td></tr>
+  </table>
+
+  <h3>Toplam tavan: %35</h3>
+  <p>Tüm açık pozisyonların toplamı hesap değerinin <b>%35'ini</b> geçemez (18 Kasım 2026'da %75'ten düşürüldü). Tavan dolunca yeni sinyaller <code>exposure_cap_reached</code>
+  notuyla atlanır. 5 sembol aynı hesabı ve aynı nakdi paylaşır; aynı gün birden fazla sinyal gelirse önce gelen sembol sermayeyi kullanır.</p>
+
+  <p>Günlük mumda stoplar geniş olduğu için tek bir işlem ortalamada hesabın yalnızca ~%6'sı kadardır (en fazla ~%11); tavan tek işlemi
+  kısıtlamaz, aynı anda açık pozisyon sayısını sınırlar. Backtest işlemleri ortak hesapta yeniden oynatıldığında %35 tavanda 82 işlemin 13'ü
+  kaçırılıyor (aynı anda en fazla 7 pozisyon); %75'te hiçbiri kaçırılmıyordu. Karşılığında aynı anda riske giren toplam tutar azalır.</p>
+
+  <div class="box">
+    <b class="t">Backtest ile farkı</b>
+    Backtest her sembolü kendi ayrı sermayesiyle ölçer; canlıda semboller sermaye için yarışır. Kripto paralar çoğu zaman birlikte hareket
+    ettiği için sinyaller aynı günlere yığılabilir ve tavan bazı işlemleri kaçırtabilir. Paper sonuçları bu farkla yorumlanmalıdır.
+  </div>
+</section>
+
+<!-- ============================== RİSK ============================== -->
+<section>
+  <h2>7. Risk katmanları</h2>
+  <p>Bir AL sinyalinin emre dönüşmesi için aşağıdaki kapıların hepsinden geçmesi gerekir. Herhangi biri kapalıysa alım yapılmaz ve nedeni
+  denetim kaydına yazılır. <b>Satış hiçbir zaman engellenmez.</b></p>
+
+  <table>
+    <tr><th style="width:4%">#</th><th style="width:26%">Kapı</th><th>Ne zaman kapanır</th><th style="width:22%">Nasıl açılır</th></tr>
+    <tr><td>1</td><td><b>Alım izni</b> (DB bayrağı)</td><td>Siz kapattığınızda, drift alarmı tetiklendiğinde</td><td>Risk sayfası / <code>risk enable-trading</code></td></tr>
+    <tr><td>2</td><td><b>Kill-switch</b></td><td>Günlük zarar −%5'e ulaşınca (gerçekleşen + açık pozisyonların gerçekleşmemiş zararı) ya da elle</td><td>Risk sayfası / <code>risk reset-kill-switch</code></td></tr>
+    <tr><td>3</td><td><b>Ardışık kayıp</b></td><td>Üst üste 3 kayıp → 24 saat yeni alım yok</td><td>Süre dolunca kendiliğinden</td></tr>
+    <tr><td>4</td><td><b>Haftalık kayıp</b></td><td>Son 7 günün gerçekleşen zararı −%8</td><td>Pencere kayınca kendiliğinden</td></tr>
+    <tr><td>5</td><td><b>Düşüş (drawdown)</b></td><td>Hesap değeri zirvesinden −%15 → sert durdurma</td><td>İnceleme + elle sıfırlama</td></tr>
+    <tr><td>5b</td><td><b>Günlük kâr hedefi</b></td><td>Günün K/Z'si (gerçekleşen + açık pozisyonlar) +%5'e ulaştı → o UTC günü yeni alım yok, kâr korunur</td><td>Ertesi gün kendiliğinden</td></tr>
+    <tr><td>6</td><td><b>Veri kontrolleri</b></td><td>Bayat sinyal, eksik mum, geçersiz OHLC, anlık fiyatın son kapanıştan %10'dan fazla sapması, fiyat alınamaması</td><td>Sorun gidince kendiliğinden</td></tr>
+    <tr><td>7</td><td><b>Hesap belirsizliği</b></td><td>Kesinleşmemiş emir, hesap durumu okunamaması</td><td>Uzlaştırma netleşince</td></tr>
+    <tr><td>8</td><td><b>Toplam tavan</b></td><td>Açık pozisyonlar hesap değerinin %35'ine ulaştı</td><td>Bir pozisyon kapanınca</td></tr>
+  </table>
+
+  <h3>Hesaplar ve hangi anahtar belirleyici?</h3>
+  <table>
+    <tr><th></th><th>Paper hesap (şu an)</th><th>Canlı hesap (kucoin; kapalı)</th></tr>
+    <tr><td><code>.env</code> TRADING_ENABLED / DRY_RUN</td><td>etkisiz</td><td><b>ana şalter</b>: ikisi birlikte açık olmadan hiçbir canlı emir verilmez</td></tr>
+    <tr><td>DB alım bayrağı</td><td>gerekli</td><td>gerekli</td></tr>
+    <tr><td>İlk emir onayı</td><td>—</td><td>gerekli, yalnızca komut satırından</td></tr>
+    <tr><td>Panelden yapılabilen</td><td>aç / kapat / kill-switch / sıfırla</td><td>yalnızca <b>güvenli yön</b>: kapat ve kill-switch tetikle</td></tr>
+  </table>
+  <p class="muted">Kök hesap kapatılırsa (<code>paper</code>) bütün paper alt hesapları da durur. Mevcut durumu <code>tradecrm risk status --account paper</code> gösterir.</p>
+</section>
+
+<!-- ============================== EMİR GÜVENLİĞİ + DRIFT ============================== -->
+<section>
+  <h2>8. Emir güvenliği</h2>
+  <ul>
+    <li><b>Her emir tekildir:</b> (hesap, sembol, yön, mum) dörtlüsü veritabanında benzersizdir. Aynı mum için ikinci emir — tekrarlanan sinyal,
+      yeniden başlatma veya aynı anda çalışan iki runner — veritabanı kısıtıyla engellenir.</li>
+    <li><b>Önce kayıt, sonra emir:</b> Emir borsaya gönderilmeden önce veritabanına yazılır. Veritabanına yazılamayan emir gönderilmez.</li>
+    <li><b>Kör tekrar yok:</b> Emir kimliği deterministiktir. Zaman aşımında emir yeniden gönderilmez; önce aynı kimlikle sorgulanır.</li>
+    <li><b>Uzlaştırma:</b> Her tick başında (ve yeniden başlatmada) kesinleşmemiş emirler sorgulanıp netleştirilir. Netleşene kadar yeni alım yapılmaz.</li>
+  </ul>
+  <p class="muted">Paper modda "borsa" simülasyondur, ama aynı güvenlik katmanından geçer; canlı adaptör eklendiğinde bu katman değişmeden kullanılacaktır.</p>
+
+  <h2 style="margin-top:8mm">9. Performans bozulma alarmı (drift)</h2>
+  <p>Strateji geçmişte işe yarasa da piyasa değişebilir. Drift alarmı, canlı sonuçların backtest beklentisinden <b>istatistiksel olarak</b>
+  kötüleşip kötüleşmediğini her tick'te kontrol eder.</p>
+  <ul>
+    <li><b>Karşılaştırma tabanı:</b> backtest'in örneklem dışı 82 işleminin getiri dağılımı (<code>state/baselines/donchian_fng__1d.json</code>).</li>
+    <li><b>Ölçüm:</b> hesabın son 30 kapanan işleminin ortalama fiyat getirisi. En az 10 işlem olmadan karar verilmez.</li>
+    <li><b>Eşik:</b> backtest dağılımından bootstrap ile türetilen alt %5 sınırı. Ortalama bunun altına düşerse <b>yeni alımlar kapatılır</b>
+      ve Telegram uyarısı gönderilir. Açık pozisyonların çıkışları çalışmaya devam eder.</li>
+    <li><b>Temiz sayfa:</b> ölçüm penceresi alım izninin son açıldığı andan başlar. İnceleme sonrası izni yeniden açmak sayacı sıfırlar.</li>
+  </ul>
+  <div class="box warn">
+    <b class="t">Yanlış alarm olasılığı</b>
+    Alarm istatistikseldir: strateji sağlamken bile her kontrolde yaklaşık %5 yanlış alarm ihtimali vardır ve kontroller tekrarlandıkça birikir.
+    Alarm "strateji bozuldu" kanıtı değil, "durup incele" işaretidir.
+  </div>
+</section>
+
+<!-- ============================== DOĞRULAMA ============================== -->
+<section>
+  <h2>10. Strateji nasıl doğrulandı</h2>
+  <p>Bir stratejinin geçmiş veride iyi görünmesi kolaydır; zor olan, görmediği veride de çalışmasıdır. Bu yüzden doğrulama üç katmanlıdır.</p>
+  <ol>
+    <li><b>Walk-forward (örneklem dışı) test:</b> Veri pencerelere bölünür; strateji her pencereyi önceden görmeden sırayla oynar.
+      Raporlanan tüm sonuçlar bu "görmediği" kısımlardandır.</li>
+    <li><b>Monte Carlo:</b> İşlemlerin sırası binlerce kez karıştırılarak kötü senaryodaki düşüş (%95'lik dilim) tahmin edilir.</li>
+    <li><b>Holdout:</b> Verinin son %30'u hiç kullanılmadan saklanır. Yalnızca son karar anında, <b>bir kez</b> açılacaktır. Henüz hiç kullanılmadı.</li>
+  </ol>
+
+  <h3>Onay kapısı — canlıya aday olmanın şartları</h3>
+  <table>
+    <tr><th>Şart</th><th class="num">Eşik</th><th class="num">donchian_fng</th><th>Sonuç</th></tr>
+    <tr><td>Örneklem dışı işlem sayısı</td><td class="num">≥ 100</td><td class="num">82</td><td><span class="pill no">Kaldı</span></td></tr>
+    <tr><td>Kâr faktörü</td><td class="num">&gt; 1,3</td><td class="num">3,06</td><td><span class="pill on">Geçti</span></td></tr>
+    <tr><td>Sharpe oranı</td><td class="num">&gt; 1,0</td><td class="num">1,03</td><td><span class="pill on">Geçti</span></td></tr>
+    <tr><td>Monte Carlo düşüş (p95)</td><td class="num">&lt; %15</td><td class="num">%11</td><td><span class="pill on">Geçti</span></td></tr>
+    <tr><td>Pozitif sembol oranı</td><td class="num">≥ 2/3</td><td class="num">8/10</td><td><span class="pill on">Geçti</span></td></tr>
+    <tr><td>±%20 parametrede çökme yok</td><td class="num">≥ 0,5</td><td class="num">0,71</td><td><span class="pill on">Geçti</span></td></tr>
+  </table>
+  <p class="muted">Veri: 10 coin, günlük mum, 2020–2026, holdout hariç. Kapı yalnızca işlem sayısı yüzünden geçilemedi.</p>
+  <p><b>Aktif 5 coin (BTC, ETH, SOL, BNB, XRP)</b> aynı düzenekte: 46 işlem, PF 4,14, Sharpe 1,10, Monte Carlo düşüş (p95) %7,4, 4/5 sembol pozitif;
+  %35 tavanla ortak hesapta 46 işlemin 44'ü alınır. Coinler sonuçlara bakılarak değil piyasa değerine göre seçildi; yine de 46 işlem kapının
+  100 eşiğinin çok altında.</p>
+
+  <div class="box loss">
+    <b class="t">Bu sonuçlar neden temkinle okunmalı</b>
+    <ul style="margin:0">
+      <li><b>Az işlem:</b> 82 işlemle istatistiksel güven sınırlıdır; tek başına birkaç büyük işlem sonucu belirleyebilir.</li>
+      <li><b>Hayatta kalma yanlılığı:</b> 10 coin bugünün büyük coinleri arasından seçildi; geçmişte çöken coinler listede yok.</li>
+      <li><b>Çoklu deneme:</b> Aynı veride çok sayıda varyant denendi; en iyisinin iyi görünmesi kısmen şans olabilir. Holdout bu yüzden saklanıyor.</li>
+    </ul>
+  </div>
+
+  <h3>Paper forward test neden çalışıyor?</h3>
+  <p>Eksik olan işlem sayısını gerçek zamanlı, hiç görülmemiş veriyle tamamlamak için. Paper sonuçları birikip backtest'le tutarlı çıkarsa
+  ve holdout testi de olumlu olursa gerçek parayla (KuCoin) çalıştırma değerlendirilebilir. Aktif 5 coinde backtest yılda yaklaşık 12 işlem gösteriyor; 100 işlem eşiğine yalnızca paper sonuçlarıyla ulaşmak
+  yıllar sürer. Bu yüzden paper sonuçları kapıyı tek başına geçirmekten çok, backtest'le tutarlılığı sınamak için kullanılacaktır.</p>
+</section>
+
+<!-- ============================== VERİ TOPLAMA ============================== -->
+<section>
+  <h2>11. Veri toplama</h2>
+  <p>Bazı veriler (open interest ve long/short oranı) Binance'te yalnızca ~30 gün saklanır. İleride bu verilerle filtre denenebilmesi için
+  sistem bunları kendi veritabanında biriktirir.</p>
+  <table>
+    <tr><th style="width:28%">Özellik</th><th>Değer</th></tr>
+    <tr><td>Toplanan</td><td>10 coin için saatlik open interest (adet ve USDT değeri) ve hesap bazlı long/short oranı</td></tr>
+    <tr><td>Zamanlama</td><td>Her saat başının 2. dakikası</td></tr>
+    <tr><td>Geri doldurma</td><td>İlk çalışmada ve toplayıcı uzun süre kapalı kalırsa, Binance'te hâlâ duran ~29 günlük geçmiş kendiliğinden çekilir</td></tr>
+    <tr><td>Saklama</td><td>45 gün; her çalışmadan sonra daha eskileri silinir (<code>COLLECT_RETENTION_DAYS</code>)</td></tr>
+    <tr><td>Kayıt</td><td>Her çalışma; süre, eklenen/silinen satır ve hata veren sembollerle kaydedilir</td></tr>
+  </table>
+  <h3>Sağlık durumları (Toplayıcılar sayfası)</h3>
+  <table>
+    <tr><th>Durum</th><th>Anlamı</th></tr>
+    <tr><td><span class="pill on">Sağlıklı</span></td><td>Süreç çalışıyor, bütün semboller güncel</td></tr>
+    <tr><td><span class="pill off">Sorunlu</span></td><td>Bir sembolde veri 2 saatten fazla geride ya da hiç yok, veya son çalışma kısmi</td></tr>
+    <tr><td><span class="pill off">Süreç durdu</span></td><td>Toplayıcı çalışmıyor — 30 günden uzun kapalı kalırsa veri geri alınamaz</td></tr>
+    <tr><td><span class="pill no">Başarısız</span></td><td>Üst üste 3 başarısız çalışma ya da bütün semboller bayat (Genel Bakış'ta kritik uyarı)</td></tr>
+  </table>
+  <p class="muted">Not: Şu an bu veriler stratejide kullanılmıyor; yalnızca gelecekteki testler için biriktiriliyor. Stratejinin kullandığı Korku/Açgözlülük
+  endeksi ve fiyat verisi her tick'te doğrudan çekilir.</p>
+</section>
+
+<!-- ============================== PANEL ============================== -->
+<section>
+  <h2>12. Admin paneli</h2>
+  <p>Tarayıcıdan <b>http://127.0.0.1:8000</b> adresinde açılır; yalnızca bu bilgisayardan erişilebilir. Birden fazla kullanıcı tanımlanabilir,
+  hepsi aynı yetkidedir.</p>
+  <table>
+    <tr><th style="width:24%">Sayfa</th><th>Ne gösterir / ne yapılır</th></tr>
+    <tr><td>Genel Bakış</td><td>Portföy değeri, nakit, pozisyondaki değer, uyarı şeridi, equity grafiği, <b>Kâr/Zarar panosu</b>, hesaplar</td></tr>
+    <tr><td>Hesaplar</td><td>Hesap başına muhasebe, alım izinleri, drift durumu, risk işlemleri</td></tr>
+    <tr><td>Pozisyonlar</td><td>Açık pozisyonlar anlık fiyatla; mum grafiği üzerinde giriş, stop ve kâr al çizgileri</td></tr>
+    <tr><td>İşlemler / Emirler</td><td>Geçmiş işlemler (CSV indirme), emir durumları ve belirsiz emirler</td></tr>
+    <tr><td>Raporlar</td><td>Günlük/haftalık/aylık/özel dönem raporu; yazdır/PDF, Markdown, CSV, Telegram</td></tr>
+    <tr><td>Risk</td><td>Alım izni aç/kapat, kill-switch (hesap adını yazarak onay), olay geçmişi</td></tr>
+    <tr><td>Süreçler</td><td>Runner ve toplayıcıyı başlat/durdur, canlı log, "oturum açılışında başlat" anahtarları</td></tr>
+    <tr><td>Toplayıcılar</td><td>Toplayıcı sağlığı, sembol bazında veri tazeliği, çalışma geçmişi, "şimdi çalıştır"</td></tr>
+    <tr><td>Backtest</td><td>Walk-forward + Monte Carlo + onay kapısı; sıradaki işi iptal; drift tabanı kaydetme. Holdout panelden çalıştırılamaz.</td></tr>
+    <tr><td>Veri kaynakları / Denetim kaydı / Kullanıcılar</td><td>Kaynak sağlığı, kim-ne-zaman kaydı, kullanıcı yönetimi ve parola</td></tr>
+  </table>
+  <h3>Güvenlik</h3>
+  <ul>
+    <li>Giriş zorunlu. Parolalar scrypt ile saklanır; oturum çerezi tarayıcı betiklerinden okunamaz ve başka sitelerden gönderilemez.</li>
+    <li>Durum değiştiren her istek ek bir doğrulama anahtarı (CSRF) ister ve kullanıcı adıyla denetim kaydına yazılır.</li>
+    <li>Aynı kullanıcı ve IP için 5 hatalı girişte 5 dakika kilit.</li>
+    <li>Canlı hesapta panel yalnızca güvenli yönde çalışır; alım iznini açmak ve ilk emir onayı yalnızca komut satırından yapılır.</li>
+    <li>Panel dışarıya açılacaksa HTTPS arkasına konmalı ve <code>ADMIN_COOKIE_SECURE=true</code> yapılmalıdır.</li>
+  </ul>
+</section>
+
+<!-- ============================== K/Z + RAPOR ============================== -->
+<section>
+  <h2>13. K/Z panosu ve raporlar</h2>
+  <h3>Kâr/Zarar panosu (Genel Bakış)</h3>
+  <ul>
+    <li><b>Gerçekleşen K/Z:</b> seçilen dönemde (7/30/90 gün, tümü) kapanan işlemler, komisyon düşülmüş.</li>
+    <li><b>Gerçekleşmemiş K/Z:</b> açık işlemlerin anlık değeri − (giriş maliyeti + giriş komisyonu).</li>
+    <li>Kazanma oranı, kâr faktörü, ortalama kazanç/kayıp, kümülatif K/Z grafiği, sembol ve çıkış nedeni dağılımı, açık işlemler ve stop'a uzaklık.</li>
+  </ul>
+  <h3>Raporlar</h3>
+  <ul>
+    <li>Rapor, oluşturulduğu anın <b>donmuş görüntüsüdür</b>; sonradan veri değişse de aynı kalır.</li>
+    <li>İçerik: özet, hesap değeri ve en büyük düşüş, günlük K/Z, sembol ve çıkış nedenleri, işlem listesi, risk olayları, toplayıcı ve panel işlemleri.</li>
+    <li>Runner her pazartesi 08:00 UTC'de geçen haftanın raporunu kendiliğinden oluşturur (Telegram tanımlıysa gönderir).</li>
+    <li>Komut satırı: <code>tradecrm report generate --kind week --account paper</code></li>
+  </ul>
+  <div class="box">
+    <b class="t">K/Z ile yüzdeler nasıl okunmalı</b>
+    "Getiri" sütunu işlemin fiyat değişimidir (giriş → çıkış). "K/Z" ise USDT cinsinden, pozisyon büyüklüğü ve komisyonlar dahil sonuçtur.
+    %10 fiyat kazancı, hesabın yaklaşık %10'u büyüklüğündeki bir pozisyonda hesaba yaklaşık %1 katkı yapar.
+  </div>
+
+  <h2 style="margin-top:8mm">14. Süreçler ve otomatik başlatma</h2>
+  <p>Arka plan süreçleri paneli kapatsanız da çalışmaya devam eder. Windows Görev Zamanlayıcı'daki görevler, oturum açılınca süreçleri kendiliğinden başlatır.</p>
+  <table>
+    <tr><th>Görev</th><th>Ne başlatır</th><th>Gecikme</th><th>Durum</th></tr>
+    <tr><td>TradeCRM Veri Toplayici</td><td><code>collect start</code></td><td>1 dk</td><td><span class="pill on">Açık</span></td></tr>
+    <tr><td>TradeCRM Paper Runner</td><td><code>live resume</code> — son parametrelerle</td><td>2 dk</td><td><span class="pill on">Açık</span></td></tr>
+    <tr><td>TradeCRM Admin Paneli</td><td><code>admin start</code></td><td>1 dk</td><td><span class="pill off">Kapalı</span></td></tr>
+  </table>
+  <ul>
+    <li><b>Docker Desktop da oturumla açılmalı.</b> Veritabanı yoksa süreçler hazır olana kadar bekler.</li>
+    <li><code>live resume</code>, son parametreleri panelle aynı doğrulamadan geçirir; geçersizse başlatmaz. Alım iznini açmaz — o ayrı bir karardır.</li>
+    <li>Anahtarlar Süreçler sayfasından ya da <code>tradecrm autostart enable|disable|status [collector|live|admin]</code> ile değiştirilir.</li>
+    <li>Loglar: <code>logs/live.log</code>, <code>logs/collector.log</code>, <code>logs/admin.log</code>; süreç kimlikleri <code>state/*.pid</code>.</li>
+  </ul>
+</section>
+
+<!-- ============================== İŞLETİM ============================== -->
+<section class="tight">
+  <h2>15. Günlük işletim ve sorun giderme</h2>
+  <div class="grid2">
+    <div class="card">
+      <h4>Her gün (2 dakika)</h4>
+      <ul>
+        <li>Genel Bakış'ta uyarı şeridi boş mu?</li>
+        <li>Kenar çubuğunda runner ve toplayıcı "Çalışıyor" mu?</li>
+        <li>Kâr/Zarar panosunda yeni işlem var mı, stop'a çok yakın pozisyon var mı?</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Her hafta</h4>
+      <ul>
+        <li>Raporlar sekmesinde haftalık raporu okuyun.</li>
+        <li>Hesaplar sayfasında drift durumuna bakın.</li>
+        <li>Toplayıcılar sayfasında son 24 saatin başarı oranına bakın.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Otomatik işlemi durdurmak</h3>
+  <table>
+    <tr><th>Amaç</th><th>Yol</th><th>Etkisi</th></tr>
+    <tr><td>Yeni alım olmasın</td><td>Risk → Alımı kapat</td><td>Runner çalışır, açık pozisyonlar kurallara göre kapanır</td></tr>
+    <tr><td>Acil durdurma</td><td>Risk → Kill-switch</td><td>Yeni alım yok; sıfırlanana kadar kalır</td></tr>
+    <tr><td>Tamamen dur</td><td>Süreçler → Paper runner → Durdur</td><td>Hiçbir kontrol yapılmaz — açık pozisyonların stopları da izlenmez</td></tr>
+  </table>
+
+  <h3>Sorun giderme</h3>
+  <table>
+    <tr><th style="width:30%">Belirti</th><th>Muhtemel neden</th><th style="width:32%">Çözüm</th></tr>
+    <tr><td>Panel açılmıyor ("failed to load page")</td><td>Panel süreci çalışmıyor</td><td><code>tradecrm admin start</code>, sonra <code>logs/admin.log</code></td></tr>
+    <tr><td>Giriş sonrası her şey hata veriyor</td><td>Docker / veritabanı kapalı</td><td>Docker Desktop'ı açın; <code>docker compose up -d</code></td></tr>
+    <tr><td>"Süreç durdu" uyarısı</td><td>Bilgisayar yeniden başladı ve otomatik başlatma kapalı, ya da süreç çöktü</td><td>Süreçler sayfasından başlatın; logda son satırlara bakın</td></tr>
+    <tr><td>Hiç işlem açılmıyor</td><td>Normal olabilir: sinyal seyrek. Ya da alım izni kapalı, veri sorunu var</td><td><code>logs/audit.jsonl</code> → <code>signal_evaluated</code> ve <code>order_blocked</code> satırları</td></tr>
+    <tr><td>Telegram mesajı gelmiyor</td><td>Token/chat id tanımsız</td><td><code>.env</code>: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID</td></tr>
+    <tr><td>Binance zaman aşımı</td><td>Geçici ağ sorunu</td><td>Kendiliğinden toparlanır; o tick'te alım yapılmaz</td></tr>
+  </table>
+
+  <h3>Sık kullanılan komutlar</h3>
+<pre>tradecrm risk status --account paper        # izinler, kill-switch, bugünkü K/Z
+tradecrm collect status                     # toplayıcı sağlığı ve veri tazeliği
+tradecrm autostart status                   # otomatik başlatma görevleri
+tradecrm report generate --kind week        # rapor oluştur
+tradecrm admin start | stop                 # paneli arka planda aç / kapat
+tradecrm admin set-password admin           # parola değiştir</pre>
+</section>
+
+<!-- ============================== SINIRLAR + SÖZLÜK ============================== -->
+<section>
+  <h2>16. Sınırlar ve dürüst uyarılar</h2>
+  <ul>
+    <li><b>Kâr garantisi yok.</b> Strateji onay kapısını geçmedi; geçmiş sonuçlar gelecekteki sonuçların göstergesi değildir.</li>
+    <li><b>Günlük +%5 hedef bir tavandır, vaat değil.</b> Hedefe ulaşılınca o gün alım durur; ulaşmak için pozisyon büyütülmez.
+      Bu strateji günde ortalama ~%0,04 bekler; backtest'te +%5 hedefi hiç tetiklenmedi. Çoğu gün hiç işlem olmaz ve
+      hedefe göre pozisyon büyütmek (martingale benzeri) bilinçli olarak reddedildi: −%5 günlük zarar limitini hızla tetikler.</li>
+    <li><b>Paper ≠ gerçek:</b> Paper broker o anki fiyattan, kaymasız ve %0,1 komisyonla doldurur. Gerçek piyasada kayma, likidite ve
+      emir gecikmesi sonuçları kötüleştirir.</li>
+    <li><b>Günde bir karar:</b> Stoplar gün içinde izlenmez; sert hareketlerde zarar 1R'yi aşabilir.</li>
+    <li><b>Bilgisayara bağlı:</b> Sistem bu bilgisayarda çalışır. Bilgisayar kapalı, uykuda ya da internetsizse tick kaçar; o sırada stop da izlenmez.</li>
+    <li><b>Korelasyon:</b> Kripto paralar birlikte düşebilir. 5 sembol çeşitlendirme gibi görünse de kötü bir günde birçok pozisyon aynı anda zarar edebilir.</li>
+    <li><b>Veri kaynakları:</b> Korku/Açgözlülük endeksi üçüncü taraf bir servistir; ulaşılamazsa filtre alımı engellemez.</li>
+  </ul>
+
+  <h2 style="margin-top:8mm">17. Sözlük</h2>
+  <table>
+    <tr><th style="width:24%">Terim</th><th>Anlamı</th></tr>
+    <tr><td>Paper</td><td>Sanal parayla, gerçek fiyatlarla yapılan simüle işlem</td></tr>
+    <tr><td>Mum (bar)</td><td>Bir zaman dilimindeki açılış, en yüksek, en düşük ve kapanış fiyatı; burada 1 gün</td></tr>
+    <tr><td>Tick</td><td>Runner'ın bir değerlendirme turu (günde bir)</td></tr>
+    <tr><td>Donchian kanalı</td><td>Son N mumun en yüksek ve en düşük fiyatı arasındaki bant</td></tr>
+    <tr><td>EMA200</td><td>Son 200 günün üssel ağırlıklı ortalaması; uzun vadeli trendin göstergesi</td></tr>
+    <tr><td>ATR</td><td>Ortalama gerçek aralık: bir coinin günlük ortalama oynaklığı</td></tr>
+    <tr><td>R</td><td>İşlem başına riske atılan tutar (giriş − ilk stop). 2R kazanç = riskin iki katı</td></tr>
+    <tr><td>Kâr faktörü (PF)</td><td>Toplam kazançlar / toplam kayıplar. 1'in üstü kârlı demektir</td></tr>
+    <tr><td>Sharpe oranı</td><td>Getirinin oynaklığa oranı; yüksekse getiri daha istikrarlı</td></tr>
+    <tr><td>Drawdown (düşüş)</td><td>Hesap değerinin önceki zirvesinden yüzde olarak gerilemesi</td></tr>
+    <tr><td>Örneklem dışı (OOS)</td><td>Strateji ayarlanırken kullanılmamış veri üzerinde ölçülen sonuç</td></tr>
+    <tr><td>Walk-forward</td><td>Veriyi sırayla pencerelere bölüp her pencereyi öncesini görmeden test etme yöntemi</td></tr>
+    <tr><td>Holdout</td><td>Son karar için hiç dokunulmadan saklanan veri dilimi</td></tr>
+    <tr><td>Monte Carlo</td><td>İşlem sırasını rastgele karıştırarak olası sonuç dağılımını tahmin etme</td></tr>
+    <tr><td>Drift</td><td>Canlı performansın beklenen dağılımdan sapması</td></tr>
+    <tr><td>Kill-switch</td><td>Yeni alımları elle sıfırlanana kadar durduran acil durum anahtarı</td></tr>
+    <tr><td>Open interest</td><td>Vadeli piyasada açık duran toplam pozisyon miktarı</td></tr>
+  </table>
+</section>
+
+</body>
+</html>

@@ -1,6 +1,12 @@
+from datetime import UTC, datetime
+
 import pytest
 
-from tradecrm.runner.scheduler import run_scheduler, timeframe_to_seconds
+from tradecrm.runner.scheduler import (
+    next_candle_close,
+    run_scheduler,
+    timeframe_to_seconds,
+)
 
 
 class TestTimeframeToSeconds:
@@ -21,8 +27,8 @@ class _StubScheduler:
         self.jobs: list = []
         self.started = False
 
-    def add_job(self, func, trigger, seconds=None, id=None):
-        self.jobs.append({"func": func, "trigger": trigger, "seconds": seconds, "id": id})
+    def add_job(self, func, trigger, seconds=None, id=None, **kwargs):
+        self.jobs.append({"func": func, "trigger": trigger, "seconds": seconds, "id": id, **kwargs})
 
     def start(self):
         self.started = True
@@ -63,3 +69,20 @@ class TestRunScheduler:
         assert len(scheduler.jobs) == 1
         assert scheduler.jobs[0]["seconds"] == 14400
         assert scheduler.jobs[0]["func"] == runner.safe_tick
+
+
+class TestCandleAlignment:
+    def test_next_close_1h(self):
+        now = datetime(2026, 1, 1, 10, 17, 3, tzinfo=UTC)
+        assert next_candle_close("1h", now=now, offset_seconds=5) == datetime(2026, 1, 1, 11, 0, 5, tzinfo=UTC)
+
+    def test_next_close_4h(self):
+        now = datetime(2026, 1, 1, 9, 0, 0, tzinfo=UTC)
+        assert next_candle_close("4h", now=now, offset_seconds=0) == datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
+
+    def test_job_start_date_is_aligned(self):
+        runner = _StubRunner()
+        scheduler = _StubScheduler()
+        now = datetime(2026, 1, 1, 10, 17, 3, tzinfo=UTC)
+        run_scheduler(runner, "1h", scheduler=scheduler, run_immediately=False, now=now)
+        assert scheduler.jobs[0]["start_date"] == datetime(2026, 1, 1, 11, 0, 5, tzinfo=UTC)

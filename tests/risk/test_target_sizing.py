@@ -1,21 +1,24 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
-from tradecrm.risk.target_sizing import compute_position_fraction, elapsed_fraction_of_utc_day
+from tradecrm.risk.target_sizing import (
+    compute_position_fraction,
+    elapsed_fraction_of_utc_day,
+)
 
 
 class TestElapsedFractionOfUtcDay:
     def test_midnight_is_zero(self):
-        dt = datetime(2026, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        dt = datetime(2026, 1, 1, 0, 0, 0, tzinfo=UTC)
         assert elapsed_fraction_of_utc_day(dt) == pytest.approx(0.0)
 
     def test_noon_is_half(self):
-        dt = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        dt = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
         assert elapsed_fraction_of_utc_day(dt) == pytest.approx(0.5)
 
     def test_end_of_day_close_to_one(self):
-        dt = datetime(2026, 1, 1, 23, 59, 59, tzinfo=timezone.utc)
+        dt = datetime(2026, 1, 1, 23, 59, 59, tzinfo=UTC)
         assert elapsed_fraction_of_utc_day(dt) > 0.999
 
 

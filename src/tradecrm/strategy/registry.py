@@ -1,8 +1,12 @@
 from tradecrm.strategy.base import Strategy
+from tradecrm.strategy.donchian_breakout import DonchianBreakoutStrategy
+from tradecrm.strategy.mean_reversion import Rsi2MeanReversionStrategy
 from tradecrm.strategy.sma_rsi_crossover import EmaRsiCrossoverStrategy
 
 STRATEGIES: dict[str, type[Strategy]] = {
     EmaRsiCrossoverStrategy.name: EmaRsiCrossoverStrategy,
+    DonchianBreakoutStrategy.name: DonchianBreakoutStrategy,
+    Rsi2MeanReversionStrategy.name: Rsi2MeanReversionStrategy,
 }
 
 
